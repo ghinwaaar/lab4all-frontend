@@ -1,5 +1,9 @@
-// API client for your Cognito backend
-const API_BASE_URL = "https://2g4pre33th.execute-api.us-east-1.amazonaws.com/prod"
+// lib/auth-api.ts
+
+// Prefer env var; fall back to your dev stage URL
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE ||
+  "https://4wqwppx8z6.execute-api.us-east-1.amazonaws.com/dev"
 
 export interface SignupData {
   email: string
@@ -44,57 +48,77 @@ export interface ApiError {
 }
 
 class AuthAPI {
-  private async makeRequest<T>(endpoint: string, data?: any, method = "POST", token?: string): Promise<T> {
+  private async makeRequest<T>(
+    endpoint: string,
+    data?: any,
+    method = "POST",
+    token?: string
+  ): Promise<T> {
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
+      Accept: "application/json",
     }
-
-    if (token) {
-      headers.Authorization = `Bearer ${token}`
-    }
+    if (token) headers.Authorization = `Bearer ${token}`
 
     try {
-      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      const res = await fetch(`${API_BASE_URL}${endpoint}`, {
         method,
         headers,
         body: data ? JSON.stringify(data) : undefined,
+        // explicit CORS mode; harmless if same-origin in dev proxy
+        mode: "cors",
+        // avoid caching profile etc.
+        cache: method === "GET" ? "no-store" : "no-cache",
       })
 
-      // Log response for debugging
-      console.log("Response status:", response.status)
-      console.log("Response headers:", response.headers)
+      // Read body safely (some endpoints may return 204/empty)
+      const raw = await res.text()
+      const parsed = raw ? safeJson(raw) : null
 
-      const result = await response.json()
-
-      if (!response.ok) {
-        console.error("API Error:", result)
-        throw new Error(result.error || `HTTP ${response.status}: ${response.statusText}`)
+      if (!res.ok) {
+        const msg =
+          (parsed && (parsed.error || parsed.message)) ||
+          raw ||
+          `HTTP ${res.status} ${res.statusText}`
+        console.error("API Error:", msg)
+        throw new Error(msg)
       }
 
-      return result
-    } catch (error) {
-      console.error("Fetch error:", error)
-      if (error instanceof TypeError && error.message.includes("fetch")) {
-        throw new Error("Network error: Unable to connect to server. Please check CORS settings.")
+      return (parsed as unknown) as T
+    } catch (err: any) {
+      console.error("Fetch error:", err)
+      // When fetch fails at network/CORS level, browsers throw TypeError
+      if (err instanceof TypeError) {
+        throw new Error(
+          "Network error: request was blocked or failed (check CORS and API availability)."
+        )
       }
-      throw error
+      throw err
     }
   }
 
-  async signup(data: SignupData): Promise<{ message: string }> {
+  signup(data: SignupData): Promise<{ message: string }> {
     return this.makeRequest("/auth/register", data)
   }
 
-  async login(data: LoginData): Promise<AuthTokens> {
+  login(data: LoginData): Promise<AuthTokens> {
     return this.makeRequest("/auth/login", data)
   }
 
-  async confirmSignup(data: ConfirmData): Promise<{ message: string }> {
+  confirmSignup(data: ConfirmData): Promise<{ message: string }> {
     return this.makeRequest("/auth/confirm", data)
   }
 
-  async getProfile(token: string): Promise<UserProfile> {
+  getProfile(token: string): Promise<UserProfile> {
     return this.makeRequest("/auth/profile", undefined, "GET", token)
+  }
+}
+
+function safeJson(s: string) {
+  try {
+    return JSON.parse(s)
+  } catch {
+    return { message: s } // fallback if backend returns plain text
   }
 }
 
