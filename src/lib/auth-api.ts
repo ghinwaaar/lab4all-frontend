@@ -1,9 +1,9 @@
 // lib/auth-api.ts
 
-// Prefer env var; fall back to your dev stage URL
-// lib/auth-api.ts
+// Use env var first; fall back to your DEV stage
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE ?? "/api";  // <= key change
+  process.env.NEXT_PUBLIC_API_BASE ||
+  "https://4wqwppx8z6.execute-api.us-east-1.amazonaws.com/dev"
 
 export interface SignupData {
   email: string
@@ -65,13 +65,10 @@ class AuthAPI {
         method,
         headers,
         body: data ? JSON.stringify(data) : undefined,
-        // explicit CORS mode; harmless if same-origin in dev proxy
         mode: "cors",
-        // avoid caching profile etc.
         cache: method === "GET" ? "no-store" : "no-cache",
       })
 
-      // Read body safely (some endpoints may return 204/empty)
       const raw = await res.text()
       const parsed = raw ? safeJson(raw) : null
 
@@ -80,14 +77,11 @@ class AuthAPI {
           (parsed && (parsed.error || parsed.message)) ||
           raw ||
           `HTTP ${res.status} ${res.statusText}`
-        console.error("API Error:", msg)
         throw new Error(msg)
       }
 
       return (parsed as unknown) as T
     } catch (err: any) {
-      console.error("Fetch error:", err)
-      // When fetch fails at network/CORS level, browsers throw TypeError
       if (err instanceof TypeError) {
         throw new Error(
           "Network error: request was blocked or failed (check CORS and API availability)."
@@ -118,7 +112,7 @@ function safeJson(s: string) {
   try {
     return JSON.parse(s)
   } catch {
-    return { message: s } // fallback if backend returns plain text
+    return { message: s }
   }
 }
 
