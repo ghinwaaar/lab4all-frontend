@@ -1,66 +1,74 @@
-"use client"
+// src/ui/MyClassrooms.tsx
+import { useEffect, useState } from "react";
+import { Button } from "../ui/button";
+import { Loader2, Users } from "lucide-react";
+import { classroomAPI, type Classroom, type Member } from "../lib/classroom-api";
+import { useAuth } from "../lib/auth-context";
 
-import { useEffect, useState } from "react"
-import { Button } from "../ui/button"
-import { Loader2, Users } from "lucide-react"
-import { classroomAPI, type Classroom, type Member } from "../lib/classroom-api"
-import { useAuth } from "../lib/auth-context"
-
-export default function MyClassrooms({ isTeacher }: { isTeacher: boolean }) {
-  const { tokens } = useAuth()
-  const [items, setItems] = useState<Classroom[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string>("")
-  const [openId, setOpenId] = useState<string | null>(null)
-  const [members, setMembers] = useState<Record<string, Member[]>>({})
-  const [mLoading, setMLoading] = useState<string | null>(null)
+export default function MyClassrooms({
+  isTeacher,
+  refreshKey = 0,
+}: {
+  isTeacher: boolean;
+  refreshKey?: number;
+}) {
+  const { tokens } = useAuth();
+  const [items, setItems] = useState<Classroom[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string>("");
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [members, setMembers] = useState<Record<string, Member[]>>({});
+  const [mLoading, setMLoading] = useState<string | null>(null);
 
   const load = async () => {
-    if (!tokens?.AccessToken) return
-    setLoading(true)
-    setError("")
+    if (!tokens?.IdToken) return; // ⬅️ use IdToken
+    setLoading(true);
+    setError("");
     try {
-      const data = await classroomAPI.listMine(tokens.AccessToken) // ← updated
-      setItems(data ?? [])
+      const data = await classroomAPI.listMine(tokens.IdToken); // ⬅️ use IdToken
+      setItems(data ?? []);
     } catch (err: any) {
-      setError(err.message || "Failed to load classrooms")
+      setError(err.message || "Failed to load classrooms");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
-    load()
+    // whenever token or refreshKey changes, reload + reset panels/cache
+    setOpenId(null);
+    setMembers({});
+    load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tokens?.AccessToken])
+  }, [tokens?.IdToken, refreshKey]); // ⬅️ depend on IdToken
 
   const toggleMembers = async (id: string) => {
     if (openId === id) {
-      setOpenId(null)
-      return
+      setOpenId(null);
+      return;
     }
-    if (!tokens?.AccessToken) return
-    // fetch only once per classroom
+    if (!tokens?.IdToken) return; // ⬅️ use IdToken
+
     if (!members[id]) {
-      setMLoading(id)
+      setMLoading(id);
       try {
-        const res = await classroomAPI.members(tokens.AccessToken, id)
-        setMembers((m) => ({ ...m, [id]: res.members }))
+        const res = await classroomAPI.members(tokens.IdToken, id); // ⬅️ use IdToken
+        setMembers((m) => ({ ...m, [id]: res.members }));
       } catch {
-        // optionally show an alert
+        // optionally surface an alert
       } finally {
-        setMLoading(null)
+        setMLoading(null);
       }
     }
-    setOpenId(id)
-  }
+    setOpenId(id);
+  };
 
   if (loading) {
     return (
       <div className="grid place-items-center p-8 text-slate-300">
         <Loader2 className="h-5 w-5 animate-spin" /> Loading classrooms…
       </div>
-    )
+    );
   }
 
   if (error) {
@@ -68,7 +76,7 @@ export default function MyClassrooms({ isTeacher }: { isTeacher: boolean }) {
       <div className="rounded-xl border border-red-700/50 bg-red-900/30 p-4 text-red-200">
         {error}
       </div>
-    )
+    );
   }
 
   if (!items.length) {
@@ -76,15 +84,15 @@ export default function MyClassrooms({ isTeacher }: { isTeacher: boolean }) {
       <div className="rounded-xl border border-slate-700 bg-slate-800/50 p-6 text-slate-300">
         No classrooms yet.
       </div>
-    )
+    );
   }
 
   const displayName = (m: Member) => {
-    const fn = m.firstName ?? m.given_name ?? ""
-    const ln = m.lastName ?? m.family_name ?? ""
-    if (fn || ln) return `${fn} ${ln}`.trim()
-    return m.email ?? "Unknown"
-  }
+    const fn = m.firstName ?? m.given_name ?? "";
+    const ln = m.lastName ?? m.family_name ?? "";
+    if (fn || ln) return `${fn} ${ln}`.trim();
+    return m.email ?? "Unknown";
+  };
 
   return (
     <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -93,12 +101,8 @@ export default function MyClassrooms({ isTeacher }: { isTeacher: boolean }) {
           key={c.classroomID}
           className="rounded-xl border border-slate-600/50 bg-slate-800/70 p-5 shadow"
         >
-          <div className="mb-2 text-lg font-semibold text-white">
-            {c.classroomName}
-          </div>
-          <div className="text-sm text-slate-300">
-            {c.school ?? c.schoolId ?? ""}
-          </div>
+          <div className="mb-2 text-lg font-semibold text-white">{c.classroomName}</div>
+          <div className="text-sm text-slate-300">{c.school ?? c.schoolId ?? ""}</div>
           <div className="mt-2 text-xs text-slate-400">
             Created: {new Date(c.createdAt).toLocaleString()}
           </div>
@@ -146,5 +150,5 @@ export default function MyClassrooms({ isTeacher }: { isTeacher: boolean }) {
         </li>
       ))}
     </ul>
-  )
+  );
 }

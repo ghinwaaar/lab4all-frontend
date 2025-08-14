@@ -1,91 +1,69 @@
-Everything is written for **Windows PowerShell**, with one-line notes for macOS / Linux.
+# React + TypeScript + Vite
 
-````markdown
-## 🚀 Local Development
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-### Prerequisites
-| Tool | Version |
-|------|---------|
-| Node | ≥ 20.x |
-| npm  | ≥ 10.x |
+Currently, two official plugins are available:
 
-> _Mac / Linux users_: replace the PowerShell commands (`Remove-Item …`) with their Bash equivalents (`rm -rf …`).
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
 
----
+## Expanding the ESLint configuration
 
-### 1  Clone & enter the project
+If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
 
-```powershell
-git clone https://github.com/<your-org>/virtual-lab.git
-cd virtual-lab
-````
+```js
+export default tseslint.config([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
 
----
+      // Remove tseslint.configs.recommended and replace with this
+      ...tseslint.configs.recommendedTypeChecked,
+      // Alternatively, use this for stricter rules
+      ...tseslint.configs.strictTypeChecked,
+      // Optionally, add this for stylistic rules
+      ...tseslint.configs.stylisticTypeChecked,
 
-### 2  Install dependencies
-
-```powershell
-npm install
+      // Other configs...
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
 ```
 
-*(If you ever hit a peer-dependency conflict, run the reset script below instead.)*
+You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
 
----
+```js
+// eslint.config.js
+import reactX from 'eslint-plugin-react-x'
+import reactDom from 'eslint-plugin-react-dom'
 
-### 3  Add environment variables
-
-```powershell
-Copy-Item .env.example .env.local
-notepad .env.local
-```
-
-Make sure it contains **your API Gateway base URL**:
-
-```env
-NEXT_PUBLIC_API_BASE_URL=https://2g4pre33th.execute-api.us-east-1.amazonaws.com/prod
-```
-
----
-
-### 4  Run the dev server
-
-```powershell
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) in your browser – changes hot-reload automatically.
-
----
-
-## 🛠 Troubleshooting
-
-### Reset the dependency tree (PowerShell)
-
-```powershell
-Remove-Item -Recurse -Force node_modules, package-lock.json
-npm install react@19.1.1 react-dom@19.1.1 next@^15 vaul@^1.1.2
-npm run dev
-```
-
-### Change the port
-
-```powershell
-npm run dev -- -p 3001
-```
-
----
-
-## 📦 Production build
-
-```powershell
-npm run build   # compile
-npm start       # serve on the same port (default 3000)
-```
-
-That’s it – happy hacking! 🎉
-
-```
-
-Feel free to trim or expand sections (e.g., add lint/test scripts) to match your team’s conventions.
-::contentReference[oaicite:0]{index=0}
+export default tseslint.config([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
+      // Enable lint rules for React
+      reactX.configs['recommended-typescript'],
+      // Enable lint rules for React DOM
+      reactDom.configs.recommended,
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
 ```

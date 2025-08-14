@@ -14,18 +14,19 @@ export default function CreateClassroomForm({ onCreated }: { onCreated?: () => v
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string>("")
   const [createdId, setCreatedId] = useState<string>("")
-  const [joinCode, setJoinCode] = useState<string>("") // API may return it
+  const [joinCode, setJoinCode] = useState<string>("")
   const canSubmit = !!classroomName
 
   const submit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    if (!tokens?.AccessToken) return setError("Not authenticated.")
+    if (!tokens?.IdToken) return setError("Not authenticated.")
     setLoading(true)
     setError("")
     setCreatedId("")
     setJoinCode("")
     try {
-      const res = await classroomAPI.create(tokens.AccessToken, { classroomName })
+      // ⬇️ Use IdToken, not AccessToken
+      const res = await classroomAPI.create(tokens.IdToken, { classroomName })
       setCreatedId(res.classroomID)
       if (res.joinCode) setJoinCode(res.joinCode)
       setClassroomName("")

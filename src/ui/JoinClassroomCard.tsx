@@ -1,5 +1,4 @@
-"use client"
-
+// src/ui/JoinClassroomCard.tsx
 import { useState } from "react"
 import { Button } from "../ui/button"
 import { Input } from "../ui/input"
@@ -17,10 +16,10 @@ export default function JoinClassroomCard({ onJoined }: { onJoined?: () => void 
 
   const join = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!tokens?.AccessToken) return setError("Not authenticated.")
+    if (!tokens?.IdToken) return setError("Not authenticated.") // ⬅️ use IdToken
     setLoading(true); setError(""); setMsg("")
     try {
-      await classroomAPI.join(tokens.AccessToken, code.trim())
+      await classroomAPI.join(tokens.IdToken, code.trim())       // ⬅️ use IdToken
       setMsg("Joined successfully!")
       setCode("")
       onJoined?.()
@@ -54,7 +53,11 @@ export default function JoinClassroomCard({ onJoined }: { onJoined?: () => void 
           className="bg-slate-700/50 text-white placeholder-slate-400 focus-visible:ring-blue-400"
           required
         />
-        <Button type="submit" disabled={loading} className="bg-blue-600 hover:bg-blue-500">
+        <Button
+          type="submit"
+          disabled={loading || !code.trim()}
+          className="bg-blue-600 hover:bg-blue-500"
+        >
           {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Join
         </Button>

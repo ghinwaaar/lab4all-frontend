@@ -6,9 +6,8 @@
     --text: #e2e8f0;
     --primary: #3b82f6;
     --primary-hover: #2563eb;
-    --danger: #ef4444;
     --border: #334155;
-    --ring: rgba(59, 130, 246, .35);
+    --ring: rgba(59, 130, 246, .35)
 }
 
 * {
@@ -25,7 +24,7 @@ body {
     margin: 0;
     background: radial-gradient(1200px 600px at 10% 0%, var(--bg2), var(--bg)) fixed;
     color: var(--text);
-    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica Neue, Arial, Noto Sans, Apple Color Emoji, Segoe UI Emoji
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica Neue, Arial
 }
 
 a {
@@ -125,7 +124,7 @@ label {
 .btn-outline {
     background: transparent;
     color: var(--text);
-    border-color: var(--border)
+    border: 1px solid var(--border)
 }
 
 .btn-outline:hover {
@@ -138,11 +137,11 @@ label {
 }
 
 .grid-2 {
-    grid-template-columns: repeat(2, minmax(0, 1fr))
+    grid-template-columns: repeat(2, 1fr)
 }
 
 .grid-3 {
-    grid-template-columns: repeat(3, minmax(0, 1fr))
+    grid-template-columns: repeat(3, 1fr)
 }
 
 @media (max-width:900px) {
@@ -184,5 +183,5 @@ label {
 }
 
 .code {
-    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace
+    font-family: ui-monospace, Menlo, Consolas, monospace
 }
