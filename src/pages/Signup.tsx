@@ -71,6 +71,20 @@ export default function Signup() {
   if (success) {
     return (
       <div className="signup-success-container">
+        <div className="signup-background-decoration">
+          {/* Floating Shapes */}
+          <div className="signup-floating-shape signup-shape-1"></div>
+          <div className="signup-floating-shape signup-shape-2"></div>
+          <div className="signup-floating-shape signup-shape-3"></div>
+          <div className="signup-floating-shape signup-shape-4"></div>
+
+          {/* Decorations */}
+          <img src="/images/atom.png" className="decor atom" alt="atom" />
+          <img src="/images/chromosomes.png" className="decor chromosomes" alt="chromosomes" />
+          <img src="/images/female-scientist.png" className="decor female-scientist" alt="scientist girl" />
+          <img src="/images/male-scientist.png" className="decor male-scientist" alt="scientist man" />
+        </div>
+
         <div className="signup-success-card">
           <div className="signup-success-icon">📧</div>
           <h2 className="signup-success-title">Check your email</h2>
@@ -78,11 +92,6 @@ export default function Signup() {
             We've sent a confirmation code to{" "}
             <span className="signup-success-email">{formData.email}</span>
           </p>
-          <div className="signup-success-decoration">
-            <div className="signup-floating-element signup-element-1">✨</div>
-            <div className="signup-floating-element signup-element-2">🎓</div>
-            <div className="signup-floating-element signup-element-3">📚</div>
-          </div>
         </div>
       </div>
     );
@@ -93,16 +102,22 @@ export default function Signup() {
   return (
     <div className="signup-container">
       <div className="signup-background-decoration">
+        {/* Floating Shapes */}
         <div className="signup-floating-shape signup-shape-1"></div>
         <div className="signup-floating-shape signup-shape-2"></div>
         <div className="signup-floating-shape signup-shape-3"></div>
         <div className="signup-floating-shape signup-shape-4"></div>
+        
+        {/* Decorative Images - shown for both students and instructors */}
+        <img src="/images/atom.png" className="decor atom" alt="atom" />
+        <img src="/images/chromosomes.png" className="decor chromosomes" alt="chromosomes" />
+        <img src="/images/female-scientist.png" className="decor female-scientist" alt="scientist girl" />
+        <img src="/images/male-scientist.png" className="decor male-scientist" alt="scientist man" />
       </div>
       
       <div className="signup-content">
         <header className="signup-header">
           <div className="signup-logo">
-            <span className="signup-logo-icon">🧪</span>
             <h1 className="signup-title">Virtual Lab</h1>
           </div>
           <p className="signup-subtitle">

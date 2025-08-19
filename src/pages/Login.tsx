@@ -45,12 +45,12 @@ export default function Login() {
   return (
     <div className="login-container">
       <div className="login-background-decoration">
-        <div className="login-floating-shape login-shape-1"></div>
-        <div className="login-floating-shape login-shape-2"></div>
-        <div className="login-floating-shape login-shape-3"></div>
-        <div className="login-floating-shape login-shape-4"></div>
-        <div className="login-floating-shape login-shape-5"></div>
-      </div>
+         {/* Decorations */}
+      <img src="/images/atom.png" className="decor atom" alt="atom" />
+      <img src="/images/chromosomes.png" className="decor chromosomes" alt="chromosomes" />
+      <img src="/images/female-scientist.png" className="decor female-scientist" alt="scientist girl" />
+      <img src="/images/male-scientist.png" className="decor male-scientist" alt="scientist man" />
+ </div>
 
       <div className="login-content">
         <div className="login-welcome-section">
