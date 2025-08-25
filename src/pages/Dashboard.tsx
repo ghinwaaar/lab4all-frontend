@@ -1,15 +1,52 @@
-// src/pages/Dashboard.tsx
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import CreateClassroomForm from "../ui/CreateClassroomForm";
 import JoinClassroomCard from "../ui/JoinClassroomCard";
 import MyClassrooms from "../ui/MyClassrooms";
 import { useAuth } from "../lib/auth-context";
 import "./Dashboard.css";
 
+type ModalKind = "experiments" | "progress" | null;
+
 export default function Dashboard() {
   const { user, tokens, logout } = useAuth();
   const [refreshKey, setRefreshKey] = useState(0);
+  const [toast, setToast] = useState<{ msg: string; tone?: "ok" | "info" | "warn" } | null>(null);
+  const [modal, setModal] = useState<ModalKind>(null);
+
   const isTeacher = (user?.role ?? "").toLowerCase() === "instructor";
+
+  // Refs for smooth scrolling / highlight
+  const actionRef = useRef<HTMLDivElement | null>(null);
+  const classesRef = useRef<HTMLDivElement | null>(null);
+
+  const showToast = (msg: string, tone: "ok" | "info" | "warn" = "ok") => {
+    setToast({ msg, tone });
+    window.clearTimeout((showToast as any)._t);
+    (showToast as any)._t = window.setTimeout(() => setToast(null), 2800);
+  };
+
+  const scrollToEl = (el?: HTMLElement | null) => {
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "start" });
+    // brief highlight
+    el.classList.add("dash-pulse-outline");
+    window.setTimeout(() => el.classList.remove("dash-pulse-outline"), 1400);
+  };
+
+  const onStatClick = (kind: "classrooms" | "experiments" | "progress") => {
+    if (kind === "classrooms") {
+      scrollToEl(classesRef.current);
+      // focus join input for students
+      if (!isTeacher) {
+        const joinInput = document.querySelector<HTMLInputElement>('input[placeholder="Enter join code"]');
+        joinInput?.focus();
+      }
+    } else if (kind === "experiments") {
+      setModal("experiments");
+    } else {
+      setModal("progress");
+    }
+  };
 
   if (!tokens?.AccessToken) {
     return (
@@ -42,6 +79,7 @@ export default function Dashboard() {
 
   return (
     <div className="dashboard-container">
+      {/* background */}
       <div className="dashboard-background-decoration">
         <div className="dashboard-floating-shape dashboard-shape-1"></div>
         <div className="dashboard-floating-shape dashboard-shape-2"></div>
@@ -49,6 +87,78 @@ export default function Dashboard() {
         <div className="dashboard-floating-shape dashboard-shape-4"></div>
       </div>
 
+      {/* toast */}
+      {toast && (
+        <div className={`dash-toast dash-toast-${toast.tone || "ok"}`} role="status" aria-live="polite">
+          {toast.msg}
+        </div>
+      )}
+
+      {/* modals */}
+      {modal && (
+        <div className="dash-modal-backdrop" onClick={() => setModal(null)}>
+          <div className="dash-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
+            {modal === "experiments" ? (
+              <>
+                <div className="dash-modal-head">
+                  <h3>Experiments</h3>
+                  <button className="dash-icon-btn" onClick={() => setModal(null)} aria-label="Close">✕</button>
+                </div>
+                <p className="dash-modal-sub">Spin up a quick practice experiment to see how the lab feels.</p>
+                <div className="dash-modal-body">
+                  <ul className="dash-list">
+                    <li>⚗️ Density of liquids (sim)</li>
+                    <li>🔬 Microscope focus practice</li>
+                    <li>🧪 Acid–base indicator test</li>
+                  </ul>
+                </div>
+                <div className="dash-modal-foot">
+                  <button
+                    className="dash-cta"
+                    onClick={() => {
+                      setModal(null);
+                      // Here you’d push to your experiments route when ready
+                      showToast("Demo experiment launched (stub) 🎉", "info");
+                    }}
+                  >
+                    Start demo experiment
+                  </button>
+                  <button className="dash-ghost" onClick={() => setModal(null)}>Close</button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="dash-modal-head">
+                  <h3>Your Progress</h3>
+                  <button className="dash-icon-btn" onClick={() => setModal(null)} aria-label="Close">✕</button>
+                </div>
+                <p className="dash-modal-sub">
+                  {isTeacher ? "Class activity overview (sample data)" : "Here’s a snapshot of your recent activity (sample)."}
+                </p>
+                <div className="dash-kpis">
+                  <div className="dash-kpi">
+                    <div className="dash-kpi-num">{isTeacher ? "3" : "7"}</div>
+                    <div className="dash-kpi-label">{isTeacher ? "Active classes" : "Completed tasks"}</div>
+                  </div>
+                  <div className="dash-kpi">
+                    <div className="dash-kpi-num">{isTeacher ? "68%" : "92%"}</div>
+                    <div className="dash-kpi-label">{isTeacher ? "Avg. submission rate" : "Avg. score"}</div>
+                  </div>
+                  <div className="dash-kpi">
+                    <div className="dash-kpi-num">{isTeacher ? "24" : "4h 12m"}</div>
+                    <div className="dash-kpi-label">{isTeacher ? "Students this week" : "Time in lab (wk)"}</div>
+                  </div>
+                </div>
+                <div className="dash-modal-foot">
+                  <button className="dash-ghost" onClick={() => setModal(null)}>Close</button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* content */}
       <div className="dashboard-content">
         {/* Header */}
         <header className="dashboard-header">
@@ -77,7 +187,9 @@ export default function Dashboard() {
         {/* Stats Section */}
         <section className="dashboard-stats-section">
           <div className="dashboard-stats-grid">
-            <div className="dashboard-stat-card">
+            <button className="dashboard-stat-card dash-click"
+              onClick={() => onStatClick("classrooms")}
+              aria-label="Go to My Classrooms">
               <div className="dashboard-stat-icon dashboard-stat-icon-primary">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
@@ -86,31 +198,30 @@ export default function Dashboard() {
               </div>
               <div className="dashboard-stat-content">
                 <h3 className="dashboard-stat-title">Classrooms</h3>
-                <p className="dashboard-stat-subtitle">
-                  {isTeacher ? "Manage your classes" : "Join active labs"}
-                </p>
+                <p className="dashboard-stat-subtitle">{isTeacher ? "Manage your classes" : "Join active labs"}</p>
               </div>
-            </div>
-            
-            <div className="dashboard-stat-card">
+            </button>
+
+            <button className="dashboard-stat-card dash-click"
+              onClick={() => onStatClick("experiments")}
+              aria-haspopup="dialog">
               <div className="dashboard-stat-icon dashboard-stat-icon-secondary">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
                   <polyline points="14,2 14,8 20,8"/>
                   <line x1="16" y1="13" x2="8" y2="13"/>
                   <line x1="16" y1="17" x2="8" y2="17"/>
-                  <polyline points="10,9 9,9 8,9"/>
                 </svg>
               </div>
               <div className="dashboard-stat-content">
                 <h3 className="dashboard-stat-title">Experiments</h3>
-                <p className="dashboard-stat-subtitle">
-                  {isTeacher ? "Create lab activities" : "Complete assignments"}
-                </p>
+                <p className="dashboard-stat-subtitle">{isTeacher ? "Create lab activities" : "Complete assignments"}</p>
               </div>
-            </div>
-            
-            <div className="dashboard-stat-card">
+            </button>
+
+            <button className="dashboard-stat-card dash-click"
+              onClick={() => onStatClick("progress")}
+              aria-haspopup="dialog">
               <div className="dashboard-stat-icon dashboard-stat-icon-accent">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M9 11H5a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2h-4"/>
@@ -120,11 +231,9 @@ export default function Dashboard() {
               </div>
               <div className="dashboard-stat-content">
                 <h3 className="dashboard-stat-title">Progress</h3>
-                <p className="dashboard-stat-subtitle">
-                  {isTeacher ? "Track student results" : "View your achievements"}
-                </p>
+                <p className="dashboard-stat-subtitle">{isTeacher ? "Track student results" : "View your achievements"}</p>
               </div>
-            </div>
+            </button>
           </div>
         </section>
 
@@ -132,31 +241,42 @@ export default function Dashboard() {
         <main className="dashboard-main">
           <div className="dashboard-main-grid">
             {/* Action Card */}
-            <div className="dashboard-action-section">
+            <div className="dashboard-action-section" ref={actionRef}>
               <div className="dashboard-action-card">
                 <div className="dashboard-action-header">
                   <h2 className="dashboard-action-title">
                     {isTeacher ? "Create New Classroom" : "Join Classroom"}
                   </h2>
                   <p className="dashboard-action-subtitle">
-                    {isTeacher 
+                    {isTeacher
                       ? "Set up a new virtual laboratory space for your students"
-                      : "Enter a classroom code to join your instructor's lab"
-                    }
+                      : "Enter a classroom code to join your instructor's lab"}
                   </p>
                 </div>
                 <div className="dashboard-action-content">
                   {isTeacher ? (
-                    <CreateClassroomForm onCreated={() => setRefreshKey(k => k + 1)} />
+                    <CreateClassroomForm
+                      onCreated={() => {
+                        setRefreshKey((k) => k + 1);
+                        showToast("Classroom created ✅", "ok");
+                        scrollToEl(classesRef.current);
+                      }}
+                    />
                   ) : (
-                    <JoinClassroomCard onJoined={() => setRefreshKey(k => k + 1)} />
+                    <JoinClassroomCard
+                      onJoined={() => {
+                        setRefreshKey((k) => k + 1);
+                        showToast("Joined classroom 🎉", "ok");
+                        scrollToEl(classesRef.current);
+                      }}
+                    />
                   )}
                 </div>
               </div>
             </div>
 
             {/* Classrooms Section */}
-            <div className="dashboard-classrooms-section">
+            <div className="dashboard-classrooms-section" ref={classesRef}>
               <div className="dashboard-classrooms-card">
                 <div className="dashboard-classrooms-header">
                   <div className="dashboard-classrooms-title-group">
@@ -171,10 +291,9 @@ export default function Dashboard() {
                     </div>
                   </div>
                   <p className="dashboard-classrooms-subtitle">
-                    {isTeacher 
+                    {isTeacher
                       ? "Manage and monitor your teaching spaces"
-                      : "Access your enrolled laboratory sessions"
-                    }
+                      : "Access your enrolled laboratory sessions"}
                   </p>
                 </div>
                 <div className="dashboard-classrooms-content">
