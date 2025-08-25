@@ -225,3 +225,18 @@ body{
     width: 80px;
   }
 }
+.login-role-toggle{
+  display:flex; gap:10px; justify-content:center; margin-top:6px;
+}
+.role-chip{
+  border:1px solid rgba(233,242,255,.25);
+  background:rgba(233,242,255,.08);
+  color:#e9f2ff;
+  height:36px; padding:0 12px; border-radius:999px;
+  cursor:pointer; transition:all .2s ease;
+}
+.role-chip:hover{ background:rgba(233,242,255,.15); transform:translateY(-1px); }
+.role-chip.active{
+  background:#e9f2ff; color:#153046; font-weight:700;
+  box-shadow:0 8px 20px rgba(233,242,255,.25);
+}
