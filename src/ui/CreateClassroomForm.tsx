@@ -107,7 +107,7 @@ export default function CreateClassroomForm({ onCreated }: { onCreated?: () => v
         <Button
           type="submit"
           disabled={!canSubmit || loading}
-          className="h-10 bg-blue-600 hover:bg-blue-500"
+  className="dash-btn-create dash-btn-block"
         >
           {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Create classroom
@@ -116,7 +116,7 @@ export default function CreateClassroomForm({ onCreated }: { onCreated?: () => v
 
       {(createdId || joinCode) && (
         <div className="mt-5 rounded-lg border border-slate-600/50 bg-slate-900/40 p-4 text-slate-200">
-          <div className="mb-2 text-sm">Classroom created ✅</div>
+          <div className="mb-2 text-sm">Classroom created </div>
           {createdId && (
             <div className="text-xs text-slate-400 mb-2">ID: {createdId}</div>
           )}
@@ -128,7 +128,7 @@ export default function CreateClassroomForm({ onCreated }: { onCreated?: () => v
               <Button
                 type="button"
                 variant="outline"
-                className="h-8 border-slate-600 text-slate-200 hover:bg-slate-700"
+className="dash-copy-btn ml-2"
                 onClick={copyJoinCode}
                 title="Copy code"
               >

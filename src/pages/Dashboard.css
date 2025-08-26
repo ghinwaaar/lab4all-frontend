@@ -292,3 +292,84 @@ html { scroll-behavior: smooth; }
   .dash-modal-foot{ flex-wrap: wrap; justify-content: stretch; }
   .dash-cta, .dash-ghost{ flex: 1 1 100%; }
 }
+/* ========== Reusable dashboard buttons ========== */
+.dash-btn{
+  display:inline-flex; align-items:center; gap:8px;
+  height:40px; padding:0 14px; border-radius:12px;
+  font-weight:700; cursor:pointer; user-select:none;
+  transition:transform .15s ease, box-shadow .2s ease, background .2s ease, opacity .2s ease;
+  border:1px solid rgba(233,242,255,.22);
+  box-shadow:0 12px 28px rgba(0,0,0,.28);
+}
+.dash-btn:focus-visible{
+  outline:3px solid rgba(106,168,255,.55);
+  outline-offset:2px;
+}
+.dash-btn:disabled{
+  opacity:.6; cursor:not-allowed; transform:none !important;
+}
+
+/* Join (primary) */
+.dash-btn-join{
+  display:inline-flex; align-items:center; gap:8px;
+  height:30px; padding:0 10px; 
+  margin-top: 5px;;
+  font-weight:700; font-size:.85rem;
+  background: rgba(106,168,255,.16);
+  color:#cfe2ff;
+  border:1px solid rgba(106,168,255,.45);
+  cursor:pointer; transition:transform .15s ease, background .2s ease;
+}
+.dash-btn-join:hover{ transform:translateY(-2px); }
+.dash-btn-join:active{ transform:translateY(-1px); }
+
+/* View members (secondary / outline) */
+.dash-btn-view{
+  background: rgba(233,242,255,.09);
+  color:#e9f2ff;
+  border-color: rgba(233,242,255,.28);
+}
+.dash-btn-view:hover{ background: rgba(233,242,255,.14); }
+
+/* Copy (compact pill – good beside a code) */
+.dash-copy-btn{
+  display:inline-flex; align-items:center; gap:8px;
+  height:30px; padding:0 10px; border-radius:999px;
+  font-weight:700; font-size:.85rem;
+  background: rgba(106,168,255,.16);
+  color:#cfe2ff;
+  border:1px solid rgba(106,168,255,.45);
+  cursor:pointer; transition:transform .15s ease, background .2s ease;
+}
+.dash-copy-btn:hover{ background: rgba(106,168,255,.22); transform:translateY(-1px); }
+.dash-copy-btn:active{ transform:translateY(0); }
+
+/* Optional tiny icon size helper for buttons */
+.dash-btn svg, .dash-copy-btn svg{
+  width:16px; height:16px; stroke-width:2;
+}
+/* ========== Create Classroom (accent primary) ========== */
+.dash-btn-create{
+  display:inline-flex; align-items:center;;
+  height:35px; padding:0 10px; border-radius:12px;
+  margin-top: 5px;
+  margin-bottom: 2px;
+  font-weight:700; font-size:.85rem;
+  background: rgba(106,168,255,.16);
+  color:#cfe2ff;
+  border:1px solid rgba(106,168,255,.45);
+  cursor:pointer; transition:transform .15s ease, background .2s ease;
+}
+
+.dash-btn-create:hover{ transform:translateY(-2px); }
+.dash-btn-create:active{ transform:translateY(-1px); }
+.dash-btn-create:focus-visible{
+  outline:3px solid rgba(106,168,255,.55);
+  outline-offset:2px;
+}
+.dash-btn-create:disabled{
+  opacity:.65; cursor:not-allowed; transform:none !important;
+}
+
+/* Optional: make it full width inside the form */
+.dash-btn-block{ width:100%; }

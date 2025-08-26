@@ -115,8 +115,8 @@ export default function MyClassrooms({
           <div className="mt-4 flex gap-3">
             <Button
               variant="outline"
-              className="border-slate-500 text-slate-200 hover:bg-slate-700"
-              onClick={() => toggleMembers(c.classroomID)}
+ className="dash-btn dash-btn-view"
+               onClick={() => toggleMembers(c.classroomID)}
               disabled={mLoading === c.classroomID}
             >
               <Users className="mr-2 h-4 w-4" />

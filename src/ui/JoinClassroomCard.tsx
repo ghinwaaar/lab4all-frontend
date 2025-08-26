@@ -56,8 +56,7 @@ export default function JoinClassroomCard({ onJoined }: { onJoined?: () => void 
         <Button
           type="submit"
           disabled={loading || !code.trim()}
-          className="bg-blue-600 hover:bg-blue-500"
-        >
+className="dash-btn dash-btn-join"        >
           {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Join
         </Button>
