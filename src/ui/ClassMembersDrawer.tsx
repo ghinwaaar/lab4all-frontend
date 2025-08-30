@@ -1,9 +1,9 @@
+// src/ui/ClassMembersDrawer.tsx
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../lib/auth-context";
 import { classroomAPI, type Member } from "../lib/classroom-api";
-import { Button } from "./button";
-import { FaTrash } from "react-icons/fa"; // Import the trash icon
-import './ClassMembersDrawer.css';
+import { FaTrash } from "react-icons/fa";
+import ConfirmDialog from "./ConfirmDialog";
 
 type Props = {
   open: boolean;
@@ -18,15 +18,20 @@ export default function ClassMembersDrawer({
   classroomID,
   initialMembers = null,
 }: Props) {
-  const { tokens } = useAuth();
+  const { tokens, user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [members, setMembers] = useState<Member[] | null>(initialMembers);
   const [error, setError] = useState<string>("");
+
+  // kick confirmation state
+  const [confirmTarget, setConfirmTarget] = useState<{ id: string; name: string } | null>(null);
 
   const canFetch = useMemo(
     () => Boolean(tokens?.IdToken && classroomID),
     [tokens?.IdToken, classroomID]
   );
+
+  const isInstructor = (user?.role ?? "").toLowerCase() === "instructor";
 
   const displayName = (m: Member) => {
     const fn = m.firstName ?? m.given_name ?? "";
@@ -61,7 +66,26 @@ export default function ClassMembersDrawer({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, tokens?.IdToken, classroomID]);
 
-  // --- styles (inlined to avoid extra CSS plumbing)
+  // open confirm modal
+  function requestKick(m: Member) {
+    if (!m.id) return;
+    setConfirmTarget({ id: m.id, name: displayName(m) });
+  }
+
+  // confirm kick action
+  async function confirmKick() {
+    if (!confirmTarget || !tokens?.IdToken) return;
+    try {
+      await classroomAPI.kick(tokens.IdToken, classroomID, confirmTarget.id);
+      setMembers((prev) => prev?.filter((m) => m.id !== confirmTarget.id) || []);
+    } catch (e: any) {
+      alert("Failed to remove student: " + e.message);
+    } finally {
+      setConfirmTarget(null);
+    }
+  }
+
+  // --- styles (inline to avoid extra CSS plumbing)
   const z = 10050; // above everything
   const overlayStyle: React.CSSProperties = {
     position: "fixed",
@@ -102,9 +126,16 @@ export default function ClassMembersDrawer({
             <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: "white" }}>
               Class members
             </h3>
-            <Button variant="ghost" size="sm" onClick={() => onOpenChange(false)}>
-              Close
-            </Button>
+
+            {/* uses your .dash-icon-btn class */}
+            <button
+              className="dash-icon-btn"
+              onClick={() => onOpenChange(false)}
+              aria-label="Close members panel"
+              title="Close"
+            >
+              ✕
+            </button>
           </div>
           <p style={{ margin: "6px 0 0", fontSize: 12, color: "#94a3b8" }}>
             People enrolled in this classroom.
@@ -112,7 +143,14 @@ export default function ClassMembersDrawer({
         </div>
 
         {/* Toolbar */}
-        <div style={{ padding: 12, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div
+          style={{
+            padding: 12,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
           <div style={{ fontSize: 13, color: "#94a3b8" }}>
             {loading
               ? "Loading…"
@@ -120,9 +158,16 @@ export default function ClassMembersDrawer({
               ? `${members.length} member${members.length === 1 ? "" : "s"}`
               : "—"}
           </div>
-          <Button variant="outline" size="sm" onClick={load} disabled={loading || !canFetch}>
+          {/* uses your .dash-ghost class */}
+          <button
+            className="dash-ghost"
+            onClick={load}
+            disabled={loading || !canFetch}
+            aria-label="Refresh members"
+            title="Refresh"
+          >
             Refresh
-          </Button>
+          </button>
         </div>
 
         {/* Body */}
@@ -162,7 +207,15 @@ export default function ClassMembersDrawer({
               {Array.from({ length: 6 }).map((_, i) => (
                 <li key={i} style={{ marginBottom: 10 }}>
                   <div style={{ height: 12, width: "66%", background: "#475569", borderRadius: 4 }} />
-                  <div style={{ height: 10, width: "33%", background: "#334155", borderRadius: 4, marginTop: 6 }} />
+                  <div
+                    style={{
+                      height: 10,
+                      width: "33%",
+                      background: "#334155",
+                      borderRadius: 4,
+                      marginTop: 6,
+                    }}
+                  />
                 </li>
               ))}
             </ul>
@@ -185,7 +238,7 @@ export default function ClassMembersDrawer({
             >
               {members.map((m, idx) => (
                 <li
-                  key={idx}
+                  key={m.id || idx}
                   style={{
                     display: "flex",
                     alignItems: "center",
@@ -193,32 +246,82 @@ export default function ClassMembersDrawer({
                     gap: 12,
                     padding: 12,
                     borderBottom:
-                      idx === members.length - 1
-                        ? "none"
-                        : "1px solid rgba(148,163,184,0.15)",
+                      idx === members.length - 1 ? "none" : "1px solid rgba(148,163,184,0.15)",
                   }}
                 >
                   <div style={{ minWidth: 0 }}>
-                    <div style={{ color: "white", fontSize: 14, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis" }}>
+                    <div
+                      style={{
+                        color: "white",
+                        fontSize: 14,
+                        fontWeight: 600,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                      }}
+                    >
                       {displayName(m)}
                     </div>
-                    <div style={{ color: "#94a3b8", fontSize: 12, overflow: "hidden", textOverflow: "ellipsis" }}>
+                    <div
+                      style={{
+                        color: "#94a3b8",
+                        fontSize: 12,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                      }}
+                    >
                       {m.email}
                     </div>
                   </div>
-                  <div style={{ textAlign: "right" }}>
+
+                  <div
+                    style={{
+                      textAlign: "right",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 10,
+                      flexShrink: 0,
+                    }}
+                  >
                     <div style={{ color: "#e2e8f0", fontSize: 12 }}>{m.role ?? ""}</div>
                     {m.grade && <div style={{ color: "#94a3b8", fontSize: 12 }}>Grade {m.grade}</div>}
+
+                    {/* Kick icon – visible only to instructors, only for student rows */}
+                    {isInstructor && m.role === "student" && m.id && (
+                      <button
+                        onClick={() => requestKick(m)}
+                        title="Remove student"
+                        aria-label={`Remove ${displayName(m)}`}
+                        style={{
+                          color: "#f87171",
+                          background: "transparent",
+                          border: "none",
+                          cursor: "pointer",
+                          padding: 6,
+                          borderRadius: 8,
+                        }}
+                      >
+                        <FaTrash />
+                      </button>
+                    )}
                   </div>
-                  <button style={{ background: "transparent", border: "none", color: "#e2e8f0", cursor: "pointer" }}>
-                    <FaTrash size={18} />
-                  </button>
                 </li>
               ))}
             </ul>
           )}
         </div>
       </aside>
+
+      {/* One ConfirmDialog for the component, not inside the button */}
+      <ConfirmDialog
+        open={!!confirmTarget}
+        message={
+          confirmTarget
+            ? `Remove ${confirmTarget.name} from this classroom?`
+            : "Remove this student from the classroom?"
+        }
+        onConfirm={confirmKick}
+        onCancel={() => setConfirmTarget(null)}
+      />
     </>
   );
 }

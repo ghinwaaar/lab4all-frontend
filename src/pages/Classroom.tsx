@@ -133,10 +133,27 @@ export default function Classroom() {
 
             <div className="classroom-actions" style={{ display: "flex", gap: 10 }}>
               <button className="action-btn" onClick={openMembersDrawer}>View members</button>
-              {isInstructor && (
+              {isInstructor ? (
                 <button className="action-btn" onClick={() => setShowComposer(true)}>New announcement</button>
+              ) : (
+                <button
+                  className="action-btn"
+                  onClick={async () => {
+                    if (!tokens?.IdToken) return;
+                    if (!window.confirm("Are you sure you want to leave this classroom?")) return;
+                    try {
+                      await classroomAPI.leave(tokens.IdToken, classId);
+                      navigate("/dashboard");
+                    } catch (e: any) {
+                      alert("Failed to leave classroom: " + e.message);
+                    }
+                  }}
+                >
+                  Leave classroom
+                </button>
               )}
             </div>
+
           </div>
         </div>
       </header>
