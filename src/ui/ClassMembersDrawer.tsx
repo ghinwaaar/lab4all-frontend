@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../lib/auth-context";
 import { classroomAPI, type Member } from "../lib/classroom-api";
 import { Button } from "./button";
+import { FaTrash } from "react-icons/fa"; // Import the trash icon
+import './ClassMembersDrawer.css';
 
 type Props = {
   open: boolean;
@@ -208,6 +210,9 @@ export default function ClassMembersDrawer({
                     <div style={{ color: "#e2e8f0", fontSize: 12 }}>{m.role ?? ""}</div>
                     {m.grade && <div style={{ color: "#94a3b8", fontSize: 12 }}>Grade {m.grade}</div>}
                   </div>
+                  <button style={{ background: "transparent", border: "none", color: "#e2e8f0", cursor: "pointer" }}>
+                    <FaTrash size={18} />
+                  </button>
                 </li>
               ))}
             </ul>

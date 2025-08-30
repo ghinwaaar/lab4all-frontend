@@ -1,0 +1,19 @@
+.classroom-item {
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.3); /* Light border */
+  background-color: rgba(30, 41, 59, 0.6); /* Background color for each classroom item */
+  padding: 16px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Box shadow for separation */
+  cursor: pointer; /* Pointer cursor when hovering */
+  transition: all 0.3s ease; /* Smooth transition */
+}
+
+.classroom-item:hover {
+  background-color: rgba(99, 102, 241, 0.2); /* Change background on hover */
+  border-color: rgba(99, 102, 241, 0.45); /* Change border color on hover */
+}
+
+.classroom-item:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25); /* Highlight border on focus */
+}

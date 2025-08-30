@@ -5,6 +5,8 @@ import { classroomAPI, type Member } from "../lib/classroom-api";
 import ClassMembersDrawer from "../ui/ClassMembersDrawer";
 import ClassAnnouncementsPanel from "../ui/ClassAnnouncementsPanel";
 import AnnouncementComposer from "../ui/AnnouncementComposer";
+import ClassExperimentsPanel from "../ui/ClassExperimentsPanel";
+import { FaRedo } from "react-icons/fa";  // Icon for refreshing
 import "./Classroom.css";
 
 type NavState = {
@@ -85,6 +87,11 @@ export default function Classroom() {
     }
   };
 
+  const refreshJoinCode = () => {
+    // Placeholder function for refreshing the join code (will link to API later)
+    alert("Join Code refreshed!");
+  };
+
   return (
     <div className="classroom-page">
       {/* Header */}
@@ -105,7 +112,19 @@ export default function Classroom() {
               <div className="classroom-meta">
                 {header.teacher && <span className="meta-chip">Instructor: {header.teacher}</span>}
                 {header.school && <span className="meta-chip">{header.school}</span>}
-                {canSeeJoinCode && header.joinCode && <span className="meta-chip chip-muted">Code: {header.joinCode}</span>}
+                {canSeeJoinCode && header.joinCode && (
+                  <div style={{ display: "flex", alignItems: "center" }}>
+                    <span className="meta-chip chip-muted">Code: {header.joinCode}</span>
+                    <button
+                      className="refresh-join-code-btn"
+                      style={{ marginLeft: 8 }}
+                      onClick={refreshJoinCode} // Refresh button
+                      title="Refresh Join Code"
+                    >
+                      <FaRedo />
+                    </button>
+                  </div>
+                )}
                 <span className="meta-chip chip-id">ID: {classId}</span>
               </div>
 
@@ -125,18 +144,7 @@ export default function Classroom() {
       {/* Main split layout */}
       <main className="classroom-main">
         <section className="column column-left">
-          <div className="panel">
-            <div className="panel-header">
-              <h2>Experiments</h2>
-              <span className="panel-sub">Coming soon</span>
-            </div>
-            <div className="panel-body">
-              <div className="placeholder">
-                This area will show experiments for <strong>{header.name}</strong>.
-                <div className="placeholder-sub">We’ll add “Start Experiment”, timeline and details here.</div>
-              </div>
-            </div>
-          </div>
+          <ClassExperimentsPanel />
         </section>
 
         <aside className="column column-right">
@@ -170,7 +178,7 @@ export default function Classroom() {
           open={showComposer}
           onClose={() => setShowComposer(false)}
           classId={classId}
-          onSuccess={() => setAnnReloadKey((k) => k + 1)}
+          onPosted={() => setAnnReloadKey((k) => k + 1)}  // Refresh announcements after posting
         />
       )}
     </div>

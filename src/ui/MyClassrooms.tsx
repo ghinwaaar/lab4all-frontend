@@ -1,10 +1,10 @@
 // src/ui/MyClassrooms.tsx
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "../ui/button";
 import { Loader2, Users } from "lucide-react";
 import { classroomAPI, type Classroom, type Member } from "../lib/classroom-api";
 import { useAuth } from "../lib/auth-context";
+import './MyClassroom.css';
 
 export default function MyClassrooms({
   isTeacher,
@@ -44,27 +44,6 @@ export default function MyClassrooms({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tokens?.IdToken, refreshKey]); // ⬅️ depend on IdToken
 
-  const toggleMembers = async (e: React.MouseEvent, id: string) => {
-    e.stopPropagation(); // ⬅️ prevent navigating when clicking "View members"
-    if (openId === id) {
-      setOpenId(null);
-      return;
-    }
-    if (!tokens?.IdToken) return; // ⬅️ use IdToken
-
-    if (!members[id]) {
-      setMLoading(id);
-      try {
-        const res = await classroomAPI.members(tokens.IdToken, id); // ⬅️ use IdToken
-        setMembers((m) => ({ ...m, [id]: res.members }));
-      } catch {
-        // optionally surface an alert
-      } finally {
-        setMLoading(null);
-      }
-    }
-    setOpenId(id);
-  };
 
   const openClassroom = (c: Classroom) => {
     navigate(`/classroom/${encodeURIComponent(c.classroomID)}`, {
@@ -110,70 +89,52 @@ export default function MyClassrooms({
   };
 
   return (
-    <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {items.map((c) => (
-        <li
-          key={c.classroomID}
-          role="button"
-          onClick={() => openClassroom(c)}
-          className="rounded-xl border border-slate-600/50 bg-slate-800/70 p-5 shadow cursor-pointer transition
-                     hover:bg-slate-800 hover:border-slate-500/70 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
-          tabIndex={0}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              openClassroom(c);
-            }
-          }}
-        >
-          <div className="mb-2 text-lg font-semibold text-white">{c.classroomName}</div>
-          <div className="text-sm text-slate-300">{c.school ?? c.schoolId ?? ""}</div>
-          <div className="mt-2 text-xs text-slate-400">
-            Created: {new Date(c.createdAt).toLocaleString()}
-          </div>
-          {isTeacher && c.joinCode && (
-            <div className="mt-2 text-sm text-blue-300">
-              Join code: <span className="font-mono">{c.joinCode}</span>
-            </div>
+   <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+  {items.map((c) => (
+    <li
+      key={c.classroomID}
+      role="button"
+      onClick={() => openClassroom(c)}
+      className="classroom-item"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          openClassroom(c);
+        }
+      }}
+    >
+      <div className="classroom-header mb-2 text-lg font-semibold text-white">{c.classroomName}</div>
+      <div className="classroom-school text-sm text-slate-300">{c.school ?? c.schoolId ?? ""}</div>
+      <div className="classroom-created mt-2 text-xs text-slate-400">
+        Created: {new Date(c.createdAt).toLocaleString()}
+      </div>
+      {isTeacher && c.joinCode && (
+        <div className="classroom-joincode mt-2 text-sm text-blue-300">
+          Join code: <span className="font-mono">{c.joinCode}</span>
+        </div>
+      )}
+      {openId === c.classroomID && (
+        <div className="classroom-members mt-4 rounded-lg border border-slate-600/50 bg-slate-900/40 p-3">
+          {!members[c.classroomID]?.length ? (
+            <div className="text-sm text-slate-400">No members yet.</div>
+          ) : (
+            <ul className="space-y-2">
+              {members[c.classroomID].map((m, i) => (
+                <li
+                  key={i}
+                  className="flex items-center justify-between text-sm text-slate-200"
+                >
+                  <span>{displayName(m)}</span>
+                  <span className="text-slate-400">{m.grade ?? ""}</span>
+                </li>
+              ))}
+            </ul>
           )}
-
-          <div className="mt-4 flex gap-3">
-            <Button
-              variant="outline"
-              className="dash-btn dash-btn-view"
-              onClick={(e) => toggleMembers(e, c.classroomID)}
-              disabled={mLoading === c.classroomID}
-            >
-              <Users className="mr-2 h-4 w-4" />
-              {openId === c.classroomID
-                ? "Hide members"
-                : mLoading === c.classroomID
-                ? "Loading…"
-                : "View members"}
-            </Button>
-          </div>
-
-          {openId === c.classroomID && (
-            <div className="mt-4 rounded-lg border border-slate-600/50 bg-slate-900/40 p-3">
-              {!members[c.classroomID]?.length ? (
-                <div className="text-sm text-slate-400">No members yet.</div>
-              ) : (
-                <ul className="space-y-2">
-                  {members[c.classroomID].map((m, i) => (
-                    <li
-                      key={i}
-                      className="flex items-center justify-between text-sm text-slate-200"
-                    >
-                      <span>{displayName(m)}</span>
-                      <span className="text-slate-400">{m.grade ?? ""}</span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          )}
-        </li>
-      ))}
-    </ul>
-  );
+        </div>
+      )}
+    </li>
+  ))}
+</ul>
+  )
 }

@@ -152,3 +152,68 @@
   color: #94a3b8;
   margin-top: 6px;
 }
+
+/* Add styles for the experiments panel */
+
+.start-experiment-btn {
+  margin-top: 20px;
+  background-color: #4caf50; /* Green button */
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.start-experiment-btn:hover {
+  background-color: #45a049;
+}
+
+/* Styles for the refresh join code button */
+.refresh-join-code-btn {
+  background-color: transparent;
+  color: #3498db; /* Blue color for the icon */
+  padding: 6px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+}
+
+.refresh-join-code-btn:hover {
+  background-color: rgba(52, 152, 219, 0.1); /* Light blue hover */
+}
+
+.refresh-join-code-btn:focus {
+  outline: none;
+}
+
+.refresh-join-code-btn svg {
+  margin-right: 4px;
+}
+
+.refresh-join-code-btn[title]:hover::after {
+  content: attr(title);
+  position: absolute;
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 5px 10px;
+  border-radius: 3px;
+  font-size: 12px;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+.placeholder {
+  font-size: 14px;
+  color: #cbd5e1;
+}
+
+.placeholder-sub {
+  font-size: 12px;
+  color: #94a3b8;
+  margin-top: 6px;
+}
