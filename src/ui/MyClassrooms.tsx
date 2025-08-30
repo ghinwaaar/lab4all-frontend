@@ -1,5 +1,6 @@
 // src/ui/MyClassrooms.tsx
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "../ui/button";
 import { Loader2, Users } from "lucide-react";
 import { classroomAPI, type Classroom, type Member } from "../lib/classroom-api";
@@ -12,6 +13,7 @@ export default function MyClassrooms({
   isTeacher: boolean;
   refreshKey?: number;
 }) {
+  const navigate = useNavigate();
   const { tokens } = useAuth();
   const [items, setItems] = useState<Classroom[]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,7 +44,8 @@ export default function MyClassrooms({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tokens?.IdToken, refreshKey]); // ⬅️ depend on IdToken
 
-  const toggleMembers = async (id: string) => {
+  const toggleMembers = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation(); // ⬅️ prevent navigating when clicking "View members"
     if (openId === id) {
       setOpenId(null);
       return;
@@ -61,6 +64,18 @@ export default function MyClassrooms({
       }
     }
     setOpenId(id);
+  };
+
+  const openClassroom = (c: Classroom) => {
+    navigate(`/classroom/${encodeURIComponent(c.classroomID)}`, {
+      state: {
+        classroomID: c.classroomID,
+        classroomName: c.classroomName,
+        teacherName: c.teacherName,
+        school: c.school || c.schoolId,
+        joinCode: c.joinCode,
+      },
+    });
   };
 
   if (loading) {
@@ -99,7 +114,17 @@ export default function MyClassrooms({
       {items.map((c) => (
         <li
           key={c.classroomID}
-          className="rounded-xl border border-slate-600/50 bg-slate-800/70 p-5 shadow"
+          role="button"
+          onClick={() => openClassroom(c)}
+          className="rounded-xl border border-slate-600/50 bg-slate-800/70 p-5 shadow cursor-pointer transition
+                     hover:bg-slate-800 hover:border-slate-500/70 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              openClassroom(c);
+            }
+          }}
         >
           <div className="mb-2 text-lg font-semibold text-white">{c.classroomName}</div>
           <div className="text-sm text-slate-300">{c.school ?? c.schoolId ?? ""}</div>
@@ -115,8 +140,8 @@ export default function MyClassrooms({
           <div className="mt-4 flex gap-3">
             <Button
               variant="outline"
- className="dash-btn dash-btn-view"
-               onClick={() => toggleMembers(c.classroomID)}
+              className="dash-btn dash-btn-view"
+              onClick={(e) => toggleMembers(e, c.classroomID)}
               disabled={mLoading === c.classroomID}
             >
               <Users className="mr-2 h-4 w-4" />

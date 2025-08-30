@@ -7,6 +7,7 @@ import Confirm from "./pages/Confirm";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import ProtectedRoute from "./pages/ProtectedRoute";
+import Classroom from "./pages/Classroom"; // ⬅️ NEW PAGE
 
 // Keep only Titration
 const Titration = lazy(() => import("./experiments/Titration.jsx")); // or ./experiments/Titration
@@ -30,6 +31,16 @@ export default function App() {
         element={
           <ProtectedRoute>
             <Dashboard />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Classroom page (protected) */}
+      <Route
+        path="/classroom/:classroomID"
+        element={
+          <ProtectedRoute>
+            <Classroom />
           </ProtectedRoute>
         }
       />
