@@ -3,6 +3,8 @@ import { useLocation, useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../lib/auth-context";
 import { classroomAPI, type Member } from "../lib/classroom-api";
 import ClassMembersDrawer from "../ui/ClassMembersDrawer";
+import ClassAnnouncementsPanel from "../ui/ClassAnnouncementsPanel";
+import AnnouncementComposer from "../ui/AnnouncementComposer";
 import "./Classroom.css";
 
 type NavState = {
@@ -19,41 +21,31 @@ export default function Classroom() {
   const { state } = useLocation();
   const { user, tokens } = useAuth();
 
-  // ---- Seed header from navigation state (fast first paint)
   const seed = (state || {}) as NavState;
   const classId = routeId || seed.classroomID || "";
 
-  const [header, setHeader] = useState<{
-    name: string;
-    teacher?: string;
-    school?: string;
-    joinCode?: string;
-  }>(() => {
+  const [header, setHeader] = useState<{ name: string; teacher?: string; school?: string; joinCode?: string }>(() => {
     const fallbackTeacher =
       seed.teacherName ||
       (user?.role?.toLowerCase() === "instructor"
         ? [user?.firstName, user?.lastName].filter(Boolean).join(" ")
         : undefined) ||
       "Instructor";
-    return {
-      name: seed.classroomName || "Classroom",
-      teacher: fallbackTeacher,
-      school: seed.school,
-      joinCode: seed.joinCode,
-    };
+    return { name: seed.classroomName || "Classroom", teacher: fallbackTeacher, school: seed.school, joinCode: seed.joinCode };
   });
 
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [detailsError, setDetailsError] = useState<string>("");
 
-  // Drawer state + optional prefetch cache
   const [membersOpen, setMembersOpen] = useState(false);
   const [prefetchedMembers, setPrefetchedMembers] = useState<Member[] | null>(null);
 
-  // ---- Fetch authoritative details
+  const [showComposer, setShowComposer] = useState(false);
+  const [annReloadKey, setAnnReloadKey] = useState(0);
+
   useEffect(() => {
     let cancelled = false;
-    async function run() {
+    (async () => {
       if (!tokens?.IdToken || !classId) return;
       setDetailsLoading(true);
       setDetailsError("");
@@ -68,40 +60,25 @@ export default function Classroom() {
             joinCode: found.joinCode ?? prev.joinCode,
           }));
         }
-        if (!cancelled && !found) {
-          setDetailsError("You don’t have access to this classroom or it no longer exists.");
-        }
+        if (!cancelled && !found) setDetailsError("You don’t have access to this classroom or it no longer exists.");
       } catch (e: any) {
-        if (!cancelled) {
-          setDetailsError(e?.message || "Failed to load classroom details");
-          console.error("[Classroom] listMine failed:", e);
-        }
+        if (!cancelled) setDetailsError(e?.message || "Failed to load classroom details");
       } finally {
         if (!cancelled) setDetailsLoading(false);
       }
-    }
-    run();
-    return () => {
-      cancelled = true;
-    };
+    })();
+    return () => { cancelled = true; };
   }, [tokens?.IdToken, classId]);
 
-  const canSeeJoinCode = useMemo(
-    () => (user?.role ?? "").toLowerCase() === "instructor",
-    [user?.role]
-  );
+  const canSeeJoinCode = useMemo(() => (user?.role ?? "").toLowerCase() === "instructor", [user?.role]);
+  const isInstructor = canSeeJoinCode;
 
-  // Exactly like Dashboard: prefetch before opening for instant content
   const openMembersDrawer = async () => {
-    if (!tokens?.IdToken || !classId) {
-      setMembersOpen(true);
-      return;
-    }
+    if (!tokens?.IdToken || !classId) { setMembersOpen(true); return; }
     try {
       const res = await classroomAPI.members(tokens.IdToken, classId);
       setPrefetchedMembers(res.members || []);
-    } catch (e) {
-      console.error("[Classroom] prefetch members failed:", e);
+    } catch {
       setPrefetchedMembers(null);
     } finally {
       setMembersOpen(true);
@@ -114,13 +91,7 @@ export default function Classroom() {
       <header className="classroom-header">
         <div className="classroom-header-inner">
           <div className="classroom-breadcrumbs">
-            <button
-              className="crumb-back"
-              onClick={() => navigate("/dashboard")}
-              aria-label="Back to dashboard"
-            >
-              ← Dashboard
-            </button>
+            <button className="crumb-back" onClick={() => navigate("/dashboard")} aria-label="Back to dashboard">← Dashboard</button>
             <span className="crumb-sep">/</span>
             <span className="crumb-current">{header.name}</span>
           </div>
@@ -129,34 +100,23 @@ export default function Classroom() {
             <div className="classroom-title-group">
               <h1 className="classroom-title">
                 {header.name}
-                {detailsLoading && (
-                  <span style={{ marginLeft: 8, fontSize: 14, color: "#94a3b8" }}>
-                    …loading
-                  </span>
-                )}
+                {detailsLoading && <span style={{ marginLeft: 8, fontSize: 14, color: "#94a3b8" }}>…loading</span>}
               </h1>
               <div className="classroom-meta">
-                {header.teacher && (
-                  <span className="meta-chip">Instructor: {header.teacher}</span>
-                )}
+                {header.teacher && <span className="meta-chip">Instructor: {header.teacher}</span>}
                 {header.school && <span className="meta-chip">{header.school}</span>}
-                {canSeeJoinCode && header.joinCode && (
-                  <span className="meta-chip chip-muted">Code: {header.joinCode}</span>
-                )}
+                {canSeeJoinCode && header.joinCode && <span className="meta-chip chip-muted">Code: {header.joinCode}</span>}
                 <span className="meta-chip chip-id">ID: {classId}</span>
               </div>
 
-              {detailsError && (
-                <div style={{ marginTop: 8, color: "#fecaca", fontSize: 13 }}>
-                  {detailsError}
-                </div>
-              )}
+              {detailsError && <div style={{ marginTop: 8, color: "#fecaca", fontSize: 13 }}>{detailsError}</div>}
             </div>
 
-            <div className="classroom-actions">
-              <button className="action-btn" onClick={openMembersDrawer}>
-                View members
-              </button>
+            <div className="classroom-actions" style={{ display: "flex", gap: 10 }}>
+              <button className="action-btn" onClick={openMembersDrawer}>View members</button>
+              {isInstructor && (
+                <button className="action-btn" onClick={() => setShowComposer(true)}>New announcement</button>
+              )}
             </div>
           </div>
         </div>
@@ -173,9 +133,7 @@ export default function Classroom() {
             <div className="panel-body">
               <div className="placeholder">
                 This area will show experiments for <strong>{header.name}</strong>.
-                <div className="placeholder-sub">
-                  We’ll add “Start Experiment”, timeline and details here.
-                </div>
+                <div className="placeholder-sub">We’ll add “Start Experiment”, timeline and details here.</div>
               </div>
             </div>
           </div>
@@ -185,27 +143,36 @@ export default function Classroom() {
           <div className="panel">
             <div className="panel-header">
               <h2>Announcements</h2>
-              <span className="panel-sub">Coming soon</span>
+              <span className="panel-sub">Latest messages</span>
             </div>
             <div className="panel-body">
-              <div className="placeholder">
-                Chat-like announcement feed will appear here.
-                <div className="placeholder-sub">
-                  Supports markdown body and file attachments.
-                </div>
-              </div>
+              {classId ? (
+                <ClassAnnouncementsPanel classId={classId} key={annReloadKey} />
+              ) : (
+                <div className="placeholder">No classroom selected.</div>
+              )}
             </div>
           </div>
         </aside>
       </main>
 
-      {/* Members Drawer (custom, no external Sheet) */}
+      {/* Members Drawer */}
       <ClassMembersDrawer
         open={membersOpen}
         onOpenChange={setMembersOpen}
         classroomID={classId}
         initialMembers={prefetchedMembers}
       />
+
+      {/* Announcement Composer */}
+      {isInstructor && (
+        <AnnouncementComposer
+          open={showComposer}
+          onClose={() => setShowComposer(false)}
+          classId={classId}
+          onSuccess={() => setAnnReloadKey((k) => k + 1)}
+        />
+      )}
     </div>
   );
 }
