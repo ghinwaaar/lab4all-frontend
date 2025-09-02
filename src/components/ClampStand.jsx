@@ -1,4 +1,4 @@
-// src/components/CreateStandAndClamp.jsx
+// src/components/ClampStand.jsx
 import React, { useEffect } from "react";
 import {
     MeshBuilder,

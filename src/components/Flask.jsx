@@ -1,19 +1,21 @@
-// src/components/CreateFlask.jsx
+// src/components/Flask.jsx
 import { useEffect } from "react";
 import {
   MeshBuilder,
   TransformNode,
-  Color3,                        // Color control API will use this
+  Color3,
+  Color4,
   Curve3,
   PBRMaterial,
+  StandardMaterial,
   Vector3,
   Mesh,
   ParticleSystem,
   Texture,
+  DynamicTexture,
 } from "@babylonjs/core";
-import { Color4 } from "@babylonjs/core/Maths/math.color";
 
-/** Erlenmeyer flask: glass + water-looking fluid (via Fluid Renderer) */
+/** Improved Erlenmeyer flask with better fluid coloring options */
 export default function CreateFlask({
   scene,
   name = "erlenmeyerFlask",
@@ -23,9 +25,9 @@ export default function CreateFlask({
     if (!scene) return;
 
     let flaskRoot, flaskBody, basePlate;
-    let ps = null;                // particle system (only positions for fluid renderer)
-    let fluidRenderer = null;     // scene-level fluid renderer
-    let fluidObjHandle = null;    // handle returned by addParticleSystem
+    let ps = null;
+    let fluidRenderer = null;
+    let fluidObjHandle = null;
 
     /* ─────────────────── 0 · ENV (IBL on, skybox hidden) ──────────── */
     if (!scene.environmentTexture) {
@@ -57,7 +59,7 @@ export default function CreateFlask({
       neckRadius = 0.5,
       neckHeight = 0.8,
       capacityMl = 250,
-      initialFillMl = 40,
+      initialFillMl = 0,
     } = options;
 
     /* ─────────────────── 3 · PROFILE (Bezier to neck) ─────────────── */
@@ -112,6 +114,7 @@ export default function CreateFlask({
         samples[samples.length - 1].r = Math.max(samples[samples.length - 1].r, r);
       }
     }
+    
     const radiusAtY = (y) => {
       if (y <= samples[0].y) return samples[0].r;
       const last = samples[samples.length - 1];
@@ -132,119 +135,221 @@ export default function CreateFlask({
     let currentMl = Math.max(0, Math.min(capacityMl, initialFillMl));
     let currentH = mlToY(currentMl);
 
-    // Particle system (source points)
+    // ─────────────────── SOLUTION 1: Custom Particle Texture ───────────────────
+    const createColoredTexture = (color) => {
+      const size = 64;
+      const dynamicTexture = new DynamicTexture(`fluidTexture_${name}`, {width: size, height: size}, scene, false);
+      const ctx = dynamicTexture.getContext();
+      
+      // Create a smooth circular gradient
+      const centerX = size / 2;
+      const centerY = size / 2;
+      const radius = size / 2;
+      
+      const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius);
+      gradient.addColorStop(0, `rgba(${Math.floor(color.r * 255)}, ${Math.floor(color.g * 255)}, ${Math.floor(color.b * 255)}, 0.8)`);
+      gradient.addColorStop(0.3, `rgba(${Math.floor(color.r * 255)}, ${Math.floor(color.g * 255)}, ${Math.floor(color.b * 255)}, 0.6)`);
+      gradient.addColorStop(1, `rgba(${Math.floor(color.r * 255)}, ${Math.floor(color.g * 255)}, ${Math.floor(color.b * 255)}, 0)`);
+      
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, size, size);
+      dynamicTexture.update();
+      
+      return dynamicTexture;
+    };
+
+    // Default particle texture
+    let currentFluidTexture = createColoredTexture(Color3.FromHexString("#4A90E2")); // Default blue
+
+    // Particle system setup
     ps = new ParticleSystem(`${name}FluidPS`, 25000, scene);
-    ps.particleTexture = new Texture("https://assets.babylonjs.com/textures/flare.png", scene);
+    ps.particleTexture = currentFluidTexture;
     ps.emitter = flaskRoot;
-    ps.minSize = 0.004; ps.maxSize = 0.008;
+    ps.minSize = 0.006; 
+    ps.maxSize = 0.012;
     ps.emitRate = 12000;
-    ps.minLifeTime = 9999; ps.maxLifeTime = 9999;
+    ps.minLifeTime = 9999; 
+    ps.maxLifeTime = 9999;
     ps.updateSpeed = 0.02;
     ps.gravity = new Vector3(0, 0, 0);
-    ps.color1 = new Color4(0.8, 0.9, 1.0, 1.0);
-    ps.color2 = new Color4(0.7, 0.85, 1.0, 1.0);
-    ps.colorDead = new Color4(0.7, 0.85, 1.0, 0.0);
+    
+    // Use neutral colors for particles - texture will provide the color
+    ps.color1 = new Color4(1.0, 1.0, 1.0, 0.8);
+    ps.color2 = new Color4(1.0, 1.0, 1.0, 0.6);
+    ps.colorDead = new Color4(1.0, 1.0, 1.0, 0.0);
 
     ps.startPositionFunction = (worldMatrix, position) => {
-      const y = Math.random() * Math.max(0.02, currentH);
-      const rMax = Math.max(0.001, radiusAtY(y) * 0.98);
+      const y = currentH > 0 ? Math.random() * currentH : 0;
+      const rMax = currentH > 0 ? Math.max(0.001, radiusAtY(y) * 0.98) : 0;
       const theta = Math.random() * Math.PI * 2;
       const u = Math.sqrt(Math.random()) * rMax;
       position.set(u * Math.cos(theta), y, u * Math.sin(theta));
       Vector3.TransformCoordinatesToRef(position, worldMatrix, position);
     };
     ps.startDirectionFunction = (_w, dir) => { dir.set(0, 0, 0); };
-    ps.start();
+    if (currentH > 1e-6) {
+   ps.start();
+ }
 
-    // Enable Fluid Renderer and register our PS as fluid
+    // Enable Fluid Renderer
     fluidRenderer = scene.enableFluidRenderer();
-    fluidObjHandle = fluidRenderer.addParticleSystem(ps); // fluid object handle
-    // NOTE: On recent Babylon builds, this handle exposes per-object shading knobs
-    // such as absorption color/strength via an internal target/parameters object.
-    // We’ll guard-access them in the API below so you can tweak color from outside.
+    fluidObjHandle = fluidRenderer.addParticleSystem(ps);
 
-    // (No billboard tint overlay anymore — color will come from fluid absorption)
+    // ─────────────────── SOLUTION 2: Direct FluidRenderer Parameters ───────────────────
+    const getFluidParams = () => {
+      // Try different parameter paths
+      if (fluidObjHandle?.targetRenderer?.fluidColor) return fluidObjHandle.targetRenderer;
+      if (fluidObjHandle?.targetRenderer?.parameters) return fluidObjHandle.targetRenderer.parameters;
+      if (fluidRenderer?.targetRenderers?.[0]) return fluidRenderer.targetRenderers[0];
+      if (fluidRenderer?.fluidColor) return fluidRenderer;
+      return null;
+    };
 
-    /* ─────────────────── 6 · PUBLIC API (metadata) ────────────────── */
+    /* ─────────────────── 6 · IMPROVED PUBLIC API ────────────────────── */
     const setLevelMl = (ml) => {
       currentMl = Math.max(0, Math.min(capacityMl, ml));
       currentH = mlToY(currentMl);
       ps?.reset();
+      if (currentH > 1e-6 && !ps?.isStarted()) {
+     ps.start();
+   }
     };
 
     const getLevelMl = () => currentMl;
+    const getSurfaceY = () => flaskRoot.getAbsolutePosition().y + currentH;
 
-    const getSurfaceY = () =>
-      flaskRoot.getAbsolutePosition().y + currentH;
-
-    // ── Fluid color controls (object-level) ──────────────────────────
-    // Not all Babylon versions expose the same property path, so we guard it.
-    const _getFluidParams = () => {
-      // Common layouts seen across versions:
-      // 1) fluidObjHandle.parameters
-      // 2) fluidObjHandle.targetRenderer?.parameters
-      // 3) fluidRenderer.parameters (global)
-      return (
-        fluidObjHandle?.parameters ||
-        fluidObjHandle?.targetRenderer?.parameters ||
-        fluidRenderer?.parameters ||
-        null
-      );
+    // Method 1: Change particle texture (most reliable)
+    const setFluidColorByTexture = (color3) => {
+      if (!color3) return;
+      
+      // Dispose old texture
+      if (currentFluidTexture) {
+        currentFluidTexture.dispose();
+      }
+      
+      // Create new colored texture
+      currentFluidTexture = createColoredTexture(color3);
+      ps.particleTexture = currentFluidTexture;
     };
 
-    const setFluidAbsorptionColor = (c3) => {
-      const p = _getFluidParams(); if (!p || !c3) return;
-      // Expected by the fluid pass: RGB absorption (dye) color
-      p.absorptionColor = c3;     // e.g., Color3.FromHexString("#f906a0")
+    // Method 2: Direct fluid renderer parameters (if available)
+    const setFluidColorByRenderer = (color3) => {
+      if (!color3) return;
+      
+      const params = getFluidParams();
+      if (params) {
+        // Try different property names that might exist
+        if ('fluidColor' in params) {
+          params.fluidColor = color3;
+        } else if ('diffuseColor' in params) {
+          params.diffuseColor = color3;
+        } else if ('absorptionColor' in params) {
+          params.absorptionColor = color3;
+          if ('absorptionStrength' in params) {
+            params.absorptionStrength = 0.8;
+          }
+        }
+        return true;
+      }
+      return false;
     };
 
-    const setFluidAbsorptionStrength = (k /* 0..1+ */) => {
-      const p = _getFluidParams(); if (!p) return;
-      // How strongly the absorption accumulates with thickness
-      p.absorptionStrength = Math.max(0, k);
+    // Method 3: Particle color modulation (fallback)
+    const setFluidColorByParticles = (color3) => {
+      if (!color3) return;
+      
+      // Modulate particle colors while keeping texture
+      ps.color1 = Color4.FromColor3(color3, 0.8);
+      ps.color2 = Color4.FromColor3(color3, 0.6);
+      ps.colorDead = Color4.FromColor3(color3, 0.0);
     };
 
-    const setFluidDensity = (d /* ~0.5..2 */) => {
-      const p = _getFluidParams(); if (!p) return;
-      // Affects thickness rendering; higher = “thicker” liquid
-      p.density = Math.max(0, d);
+    // Main color setting function - tries multiple methods
+    const setFluidColor = (color3) => {
+      let targetColor;
+      if (typeof color3 === 'string') {
+        targetColor = Color3.FromHexString(color3);
+      } else {
+        targetColor = color3;
+      }
+      
+      if (!targetColor) return;
+
+      // Try renderer method first (cleanest if it works)
+      if (!setFluidColorByRenderer(targetColor)) {
+        // Fall back to texture method (most reliable)
+        setFluidColorByTexture(targetColor);
+      }
     };
 
-    // Back-compat shim: setColor(c3) now means “full absorption with that color”
-    const setColor = (c3) => {
-      setFluidAbsorptionColor(c3);
-      setFluidAbsorptionStrength(1);
+    // Preset fluid colors with realistic chemical colors
+    const setFluidToChemical = (chemical) => {
+      const chemicals = {
+        'water': '#87CEEB',        // Sky blue
+        'acid': '#FFD700',         // Gold yellow
+        'base': '#9370DB',         // Medium purple
+        'copper_sulfate': '#1E90FF', // Dodger blue
+        'iodine': '#800080',       // Purple
+        'bromothymol': '#FFFF00',  // Yellow
+        'phenolphthalein': '#FF69B4', // Hot pink
+        'methylene_blue': '#191970', // Midnight blue
+        'potassium_permanganate': '#8B008B', // Dark magenta
+        'chlorophyll': '#228B22',  // Forest green
+        'blood': '#8B0000',        // Dark red
+        'oil': '#DAA520',          // Goldenrod
+      };
+      
+      const colorHex = chemicals[chemical.toLowerCase()] || chemical;
+      setFluidColor(colorHex);
     };
 
-    // expose
+    // Advanced fluid properties (if supported by renderer)
+    const setFluidDensity = (density) => {
+      const params = getFluidParams();
+      if (params && 'density' in params) {
+        params.density = Math.max(0.1, Math.min(3.0, density));
+      }
+    };
+
+    const setFluidViscosity = (viscosity) => {
+      const params = getFluidParams();
+      if (params && 'viscosity' in params) {
+        params.viscosity = Math.max(0.1, Math.min(10.0, viscosity));
+      }
+    };
+
+    // Enhanced API exposure
     flaskRoot.metadata = flaskRoot.metadata || {};
     flaskRoot.metadata.capacityMl = capacityMl;
     flaskRoot.metadata.getLevelMl = getLevelMl;
     flaskRoot.metadata.setLevelMl = setLevelMl;
-    flaskRoot.metadata.setColor = setColor;
-    flaskRoot.metadata.setFluidAbsorptionColor = setFluidAbsorptionColor;
-    flaskRoot.metadata.setFluidAbsorptionStrength = setFluidAbsorptionStrength;
-    flaskRoot.metadata.setFluidDensity = setFluidDensity;
     flaskRoot.metadata.getSurfaceY = getSurfaceY;
+    
+    // Color methods
+    flaskRoot.metadata.setFluidColor = setFluidColor;
+    flaskRoot.metadata.setFluidColorByTexture = setFluidColorByTexture;
+    flaskRoot.metadata.setFluidColorByRenderer = setFluidColorByRenderer;
+    flaskRoot.metadata.setFluidColorByParticles = setFluidColorByParticles;
+    flaskRoot.metadata.setFluidToChemical = setFluidToChemical;
+    
+    // Advanced properties
+    flaskRoot.metadata.setFluidDensity = setFluidDensity;
+    flaskRoot.metadata.setFluidViscosity = setFluidViscosity;
 
-    // init
+    // Initialize with clear water
     setLevelMl(currentMl);
-    // Initialize fluid color as CLEAR: no absorption
-    setFluidAbsorptionColor(Color3.FromHexString("#ffffff"));
-    setFluidAbsorptionStrength(0);
+    setFluidColor('#87CEEB'); // Light blue water
 
     /* ─────────────────── 7 · CLEANUP ──────────────────────────────── */
     return () => {
-      try {
-        if (fluidRenderer && ps) {
-          fluidRenderer.removeParticleSystem?.(ps);
-        }
+      try { 
+        if (currentFluidTexture) currentFluidTexture.dispose();
+        fluidRenderer?.removeParticleSystem?.(ps); 
       } catch {}
       try { ps?.dispose(); } catch {}
       try { basePlate?.dispose(); } catch {}
       try { flaskBody?.dispose(); } catch {}
       try { flaskRoot?.dispose(); } catch {}
-      // keep glassMat; it's shared
     };
   }, [scene, name, JSON.stringify(options)]);
 
