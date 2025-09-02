@@ -1,4 +1,4 @@
-// lib/classroom-api.ts
+// src/lib/classroom-api.ts
 const API_BASE = import.meta.env.VITE_API_BASE || "/api";
 
 export type Classroom = {
@@ -35,7 +35,11 @@ async function req<T>(path: string, opts: RequestInit = {}) {
     cache: opts.method === "GET" ? "no-store" : "no-cache",
   });
   const text = await res.text();
-  if (!res.ok) throw new Error(text || `HTTP ${res.status}`);
+  if (!res.ok) {
+    let msg = text;
+    try { const j = JSON.parse(text); msg = j.error || j.message || text; } catch {}
+    throw new Error(msg || `HTTP ${res.status}`);
+  }
   return (text ? JSON.parse(text) : null) as T;
 }
 
@@ -43,11 +47,7 @@ export const classroomAPI = {
   create(token: string, body: { classroomName: string }) {
     return req<{ message: string; classroomID: string; joinCode?: string }>(
       "/classroom/create",
-      {
-        method: "POST",
-        body: JSON.stringify(body),
-        headers: { Authorization: `Bearer ${token}` },
-      }
+      { method: "POST", body: JSON.stringify(body), headers: { Authorization: `Bearer ${token}` } }
     );
   },
 
@@ -86,6 +86,15 @@ export const classroomAPI = {
     return req<{ message: string }>("/classroom/kick", {
       method: "POST",
       body: JSON.stringify({ classroomID, studentId }),
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+
+  /** NEW: POST /classroom/refresh-join-code with { classId } */
+  refreshJoinCode(token: string, classId: string) {
+    return req<{ joinCode: string }>("/classroom/refreshjc", {
+      method: "POST",
+      body: JSON.stringify({ classId }),
       headers: { Authorization: `Bearer ${token}` },
     });
   },

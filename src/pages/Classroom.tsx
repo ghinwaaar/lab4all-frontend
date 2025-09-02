@@ -1,3 +1,4 @@
+// src/pages/Classroom.tsx
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../lib/auth-context";
@@ -6,7 +7,7 @@ import ClassMembersDrawer from "../ui/ClassMembersDrawer";
 import ClassAnnouncementsPanel from "../ui/ClassAnnouncementsPanel";
 import AnnouncementComposer from "../ui/AnnouncementComposer";
 import ClassExperimentsPanel from "../ui/ClassExperimentsPanel";
-import { FaRedo } from "react-icons/fa";  // Icon for refreshing
+import { FaRedo } from "react-icons/fa";
 import "./Classroom.css";
 
 type NavState = {
@@ -44,6 +45,10 @@ export default function Classroom() {
 
   const [showComposer, setShowComposer] = useState(false);
   const [annReloadKey, setAnnReloadKey] = useState(0);
+
+  // toast state
+  const [toast, setToast] = useState<{ kind: "ok" | "err"; msg: string } | null>(null);
+  const [refreshingCode, setRefreshingCode] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -87,13 +92,31 @@ export default function Classroom() {
     }
   };
 
-  const refreshJoinCode = () => {
-    // Placeholder function for refreshing the join code (will link to API later)
-    alert("Join Code refreshed!");
-  };
+  async function onRefreshJoinCode() {
+    if (!tokens?.IdToken || !classId || !isInstructor) return;
+    setRefreshingCode(true);
+    try {
+      const res = await classroomAPI.refreshJoinCode(tokens.IdToken, classId);
+      setHeader((h) => ({ ...h, joinCode: res.joinCode }));
+      setToast({ kind: "ok", msg: "Join code refreshed" });
+    } catch (e: any) {
+      setToast({ kind: "err", msg: e?.message || "Failed to refresh code" });
+    } finally {
+      setRefreshingCode(false);
+      // auto-hide toast
+      setTimeout(() => setToast(null), 2200);
+    }
+  }
 
   return (
     <div className="classroom-page">
+      {/* Tiny toast */}
+      {toast && (
+        <div className={`toast ${toast.kind === "ok" ? "toast-ok" : "toast-err"}`}>
+          {toast.msg}
+        </div>
+      )}
+
       {/* Header */}
       <header className="classroom-header">
         <div className="classroom-header-inner">
@@ -112,19 +135,22 @@ export default function Classroom() {
               <div className="classroom-meta">
                 {header.teacher && <span className="meta-chip">Instructor: {header.teacher}</span>}
                 {header.school && <span className="meta-chip">{header.school}</span>}
+
                 {canSeeJoinCode && header.joinCode && (
-                  <div style={{ display: "flex", alignItems: "center" }}>
+                  <div className="joincode-wrap">
                     <span className="meta-chip chip-muted">Code: {header.joinCode}</span>
                     <button
-                      className="refresh-join-code-btn"
-                      style={{ marginLeft: 8 }}
-                      onClick={refreshJoinCode} // Refresh button
-                      title="Refresh Join Code"
+                      className="icon-btn"
+                      aria-label="Refresh join code"
+                      title="Refresh join code"
+                      onClick={onRefreshJoinCode}
+                      disabled={refreshingCode}
                     >
-                      <FaRedo />
+                      <FaRedo className={refreshingCode ? "spin" : ""} />
                     </button>
                   </div>
                 )}
+
                 <span className="meta-chip chip-id">ID: {classId}</span>
               </div>
 
@@ -133,27 +159,10 @@ export default function Classroom() {
 
             <div className="classroom-actions" style={{ display: "flex", gap: 10 }}>
               <button className="action-btn" onClick={openMembersDrawer}>View members</button>
-              {isInstructor ? (
+              {isInstructor && (
                 <button className="action-btn" onClick={() => setShowComposer(true)}>New announcement</button>
-              ) : (
-                <button
-                  className="action-btn"
-                  onClick={async () => {
-                    if (!tokens?.IdToken) return;
-                    if (!window.confirm("Are you sure you want to leave this classroom?")) return;
-                    try {
-                      await classroomAPI.leave(tokens.IdToken, classId);
-                      navigate("/dashboard");
-                    } catch (e: any) {
-                      alert("Failed to leave classroom: " + e.message);
-                    }
-                  }}
-                >
-                  Leave classroom
-                </button>
               )}
             </div>
-
           </div>
         </div>
       </header>
@@ -195,7 +204,7 @@ export default function Classroom() {
           open={showComposer}
           onClose={() => setShowComposer(false)}
           classId={classId}
-          onPosted={() => setAnnReloadKey((k) => k + 1)}  // Refresh announcements after posting
+          onPosted={() => setAnnReloadKey((k) => k + 1)}
         />
       )}
     </div>
