@@ -1,0 +1,242 @@
+/* ---------- Virtual Lab — Login (match the mock) ---------- */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+
+:root{
+  --bg1: #22374c;     /* dark */
+  --bg2: #305260;     /* light */
+  --card: #182836;    /* card body */
+  --card-br: #2a4254; /* card border */
+  --halo: #7c5cff;    /* purple outline */
+  --ink:  #ffffff;
+}
+
+*{ box-sizing:border-box; }
+html, body, #root{ height:100%; }
+body{
+  margin:0;
+  font-family:Poppins, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+  color:var(--ink);
+  background:
+    radial-gradient(1200px 600px at 50% -10%, #2c475a 0%, transparent 60%) no-repeat,
+    linear-gradient(180deg, var(--bg2) 0%, var(--bg1) 60%);
+}
+
+/* ---------- page shell ---------- */
+.login-container{
+  position:relative;
+  min-height:100vh;
+  width:100%;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:flex-start;
+  padding: clamp(20px, 4vw, 32px);
+  overflow:hidden;
+}
+
+/* big title like the mock */
+.login-welcome-section{
+  margin-top: clamp(4px, 2vh, 16px);
+  text-align:center;
+}
+.login-title{
+  margin:0 0 clamp(8px, 2vh, 18px);
+  font-weight:800;
+  font-size: clamp(40px, 7vw, 80px);
+  letter-spacing:.4px;
+  text-shadow: 0 3px 0 rgba(0,0,0,.18);
+}
+/* hide the subtitle for the exact look */
+.login-subtitle{ display:none; }
+
+/* ---------- centered form card ---------- */
+.login-content{
+  width:100%;
+  display:grid;
+  place-items:center;
+  margin-top: clamp(4px, 2vh, 10px);
+}
+
+.login-signup-link{
+  background:none;
+  border:none;
+  padding:0;
+  margin:0;
+  font: inherit;
+  color:#8fd0ff;
+  font-weight:600;
+  cursor:pointer;
+  text-decoration: underline;
+}
+.login-signup-link:hover{ color:#b3e1ff; }
+
+.login-form-card{
+  width:min(560px, 92vw);
+  background: var(--card);
+  border: 1px solid var(--card-br);
+  border-radius: 22px;
+  padding: clamp(22px, 3.4vw, 32px);
+  box-shadow:
+    0 0 0 4px color-mix(in oklab, var(--halo) 65%, transparent),
+    0 22px 48px rgba(0,0,0,.35);
+}
+
+.login-card-header{
+  text-align:left;        /* mock shows no centered header */
+  margin:0 0 14px;
+}
+.login-card-title{
+  display:none;           /* remove the extra “Sign In” title to match mock */
+}
+.login-card-subtitle{ display:none; }
+
+/* labels + inputs */
+.login-label{
+  font-weight:600;
+  font-size: .95rem;
+  color:#e7f2fb;
+  margin: 12px 0 6px;
+}
+.login-input{
+  width:100%;
+  height:46px;
+  border-radius: 12px;
+  border:1px solid #3b5a70;
+  background:#223d4d;
+  color:#e8f3f9;
+  padding: 0 14px;
+  outline:none;
+  transition: box-shadow .2s, border-color .2s, transform .12s;
+}
+.login-input::placeholder{ color:#a7c3d6; }
+.login-input:focus{
+  border-color:#76b7d7;
+  box-shadow: 0 0 0 4px rgba(118,183,215,.18);
+  transform: translateY(-1px);
+}
+
+/* error */
+.login-error-alert{
+  background:#fee2e2;
+  border:1px solid #fecaca;
+  color:#991b1b;
+  border-radius:12px;
+  padding:10px 12px;
+  margin-bottom:6px;
+}
+
+/* buttons row like mock */
+.login-button-group{
+  display:flex;
+  gap:12px;
+  margin-top: 12px;
+  flex-wrap:wrap;
+}
+.login-btn-secondary, .login-btn-primary{
+  flex:1 1 180px;
+  height:44px;
+  border-radius:12px;
+  font-weight:600;
+  cursor:pointer;
+  transition: transform .12s, box-shadow .2s, opacity .2s;
+  border:none;
+}
+
+/* Teacher (blue‑grey) */
+.login-btn-secondary{
+  background:#2a4556;
+  color:#e9f2f8;
+  box-shadow: inset 0 0 0 2px #5b7f95;
+}
+.login-btn-secondary:hover{ box-shadow: inset 0 0 0 2px #8fc0da; transform: translateY(-2px); }
+
+/* Student (light button) */
+.login-btn-primary{
+  background:#eaf3f9;
+  color:#1b2a35;
+  box-shadow: 0 10px 22px rgba(255,255,255,.10);
+}
+.login-btn-primary:hover{ transform: translateY(-2px); box-shadow: 0 14px 28px rgba(255,255,255,.14); }
+.login-btn-primary.login-btn-loading{ opacity:.8; cursor:not-allowed; }
+
+.login-spinner{
+  width:18px;height:18px;border:2px solid rgba(0,0,0,.18);border-top-color:#1b2a35;
+  border-radius:50%; margin-right:8px; animation:spin 1s linear infinite;
+}
+@keyframes spin{ to{ transform:rotate(360deg);} }
+
+.login-forgot-link{
+  margin-top: 10px;
+  text-align:center;
+  color:#d7e8f6;
+}
+.login-link-btn{
+  background:none;border:none;color:#8fd0ff;text-decoration:underline;cursor:pointer;
+}
+
+/* ---------- decorations (images) ---------- */
+.decor {
+  position: absolute;
+  pointer-events: none;
+  user-select: none;
+  max-width: none;   /* allow scaling */
+}
+
+/* Specific sizes & positions */
+.decor.atom {
+  top: 20px;
+  left: 40px;
+  width: 120px;   /* was small, increase */
+}
+
+.decor.chromosomes {
+  top: 20px;
+  right: 40px;
+  width: 140px;
+}
+
+.decor.female-scientist {
+  bottom: 20px;
+  left: 40px;
+  width: 180px;
+}
+
+.decor.male-scientist {
+  bottom: 20px;
+  right: 40px;
+  width: 200px;
+}
+
+/* Responsive scaling */
+@media (max-width: 1024px) {
+  .decor.atom,
+  .decor.chromosomes,
+  .decor.female-scientist,
+  .decor.male-scientist{
+    width: 120px;
+  }
+}
+
+@media (max-width: 640px) {
+  .decor.atom,
+  .decor.chromosomes,
+  .decor.female-scientist,
+  .decor.male-scientist {
+    width: 80px;
+  }
+}
+.login-role-toggle{
+  display:flex; gap:10px; justify-content:center; margin-top:6px;
+}
+.role-chip{
+  border:1px solid rgba(233,242,255,.25);
+  background:rgba(233,242,255,.08);
+  color:#e9f2ff;
+  height:36px; padding:0 12px; border-radius:999px;
+  cursor:pointer; transition:all .2s ease;
+}
+.role-chip:hover{ background:rgba(233,242,255,.15); transform:translateY(-1px); }
+.role-chip.active{
+  background:#e9f2ff; color:#153046; font-weight:700;
+  box-shadow:0 8px 20px rgba(233,242,255,.25);
+}

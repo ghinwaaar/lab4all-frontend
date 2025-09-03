@@ -1,0 +1,61 @@
+/* Close Button */
+.dash-icon-btn {
+  background: none;
+  border: none;
+  color: #cbd5e1; /* muted color for the button */
+  cursor: pointer;
+  font-size: 18px;
+  transition: all 0.3s ease;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.dash-icon-btn:hover {
+  color: #fff; /* on hover, change color to white */
+}
+
+/* Refresh Button */
+.dash-ghost {
+  background: transparent;
+  color: #e5e7eb; /* neutral light gray */
+  border: 2px solid #e5e7eb;
+  padding: 8px 12px;
+  border-radius: 10px;
+  transition: background-color 0.2s ease, color 0.2s ease;
+  cursor: pointer;
+}
+
+.dash-ghost:hover {
+  background: #e5e7eb;
+  color: #1f2937; /* darker text */
+}
+
+.dash-ghost:disabled {
+  cursor: not-allowed;
+  background: #f1f5f9; /* lighter background for disabled */
+  border-color: #e0e7ff;
+}
+
+/* Button Styling Inside ClassMembersDrawer */
+button {
+  background-color: transparent;
+  border: none;
+  color: #e2e8f0;
+  font-size: 14px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  border-radius: 8px;
+}
+
+button:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+button:disabled {
+  cursor: not-allowed;
+  background-color: rgba(255, 255, 255, 0.3);
+}
