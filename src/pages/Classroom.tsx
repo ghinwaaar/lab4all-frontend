@@ -16,25 +16,58 @@ type NavState = {
   teacherName?: string;
   school?: string;
   joinCode?: string;
+  // sometimes different casing/keys might be used by callers:
+  classroomId?: string;
+  classId?: string;
 };
 
 export default function Classroom() {
-  const { classroomID: routeId } = useParams<{ classroomID: string }>();
+  const params = useParams<Record<string, string>>();
+  const location = useLocation();
+  const { state } = location;
   const navigate = useNavigate();
-  const { state } = useLocation();
   const { user, tokens } = useAuth();
 
+  // Resolve classId robustly from: route params -> nav state -> query string
+  const qs = new URLSearchParams(location.search);
   const seed = (state || {}) as NavState;
-  const classId = routeId || seed.classroomID || "";
 
-  const [header, setHeader] = useState<{ name: string; teacher?: string; school?: string; joinCode?: string }>(() => {
+  const routeId =
+    params.classroomID ||
+    params.classroomId ||
+    params.classId ||
+    params.id ||
+    "";
+
+  const stateId = seed.classroomID || seed.classroomId || seed.classId || "";
+
+  const queryId =
+    qs.get("classroomID") ||
+    qs.get("classroomId") ||
+    qs.get("classId") ||
+    qs.get("id") ||
+    "";
+
+  const classId = routeId || stateId || queryId || "";
+
+  const [header, setHeader] = useState<{
+    name: string;
+    teacher?: string;
+    school?: string;
+    joinCode?: string;
+  }>(() => {
     const fallbackTeacher =
       seed.teacherName ||
       (user?.role?.toLowerCase() === "instructor"
         ? [user?.firstName, user?.lastName].filter(Boolean).join(" ")
         : undefined) ||
       "Instructor";
-    return { name: seed.classroomName || "Classroom", teacher: fallbackTeacher, school: seed.school, joinCode: seed.joinCode };
+    return {
+      name: seed.classroomName || "Classroom",
+      teacher: fallbackTeacher,
+      school: seed.school,
+      joinCode: seed.joinCode,
+    };
   });
 
   const [detailsLoading, setDetailsLoading] = useState(false);
@@ -67,21 +100,31 @@ export default function Classroom() {
             joinCode: found.joinCode ?? prev.joinCode,
           }));
         }
-        if (!cancelled && !found) setDetailsError("You don’t have access to this classroom or it no longer exists.");
+        if (!cancelled && !found) {
+          setDetailsError("You don’t have access to this classroom or it no longer exists.");
+        }
       } catch (e: any) {
         if (!cancelled) setDetailsError(e?.message || "Failed to load classroom details");
       } finally {
         if (!cancelled) setDetailsLoading(false);
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [tokens?.IdToken, classId]);
 
-  const canSeeJoinCode = useMemo(() => (user?.role ?? "").toLowerCase() === "instructor", [user?.role]);
+  const canSeeJoinCode = useMemo(
+    () => (user?.role ?? "").toLowerCase() === "instructor",
+    [user?.role]
+  );
   const isInstructor = canSeeJoinCode;
 
   const openMembersDrawer = async () => {
-    if (!tokens?.IdToken || !classId) { setMembersOpen(true); return; }
+    if (!tokens?.IdToken || !classId) {
+      setMembersOpen(true);
+      return;
+    }
     try {
       const res = await classroomAPI.members(tokens.IdToken, classId);
       setPrefetchedMembers(res.members || []);
@@ -103,7 +146,6 @@ export default function Classroom() {
       setToast({ kind: "err", msg: e?.message || "Failed to refresh code" });
     } finally {
       setRefreshingCode(false);
-      // auto-hide toast
       setTimeout(() => setToast(null), 2200);
     }
   }
@@ -121,7 +163,13 @@ export default function Classroom() {
       <header className="classroom-header">
         <div className="classroom-header-inner">
           <div className="classroom-breadcrumbs">
-            <button className="crumb-back" onClick={() => navigate("/dashboard")} aria-label="Back to dashboard">← Dashboard</button>
+            <button
+              className="crumb-back"
+              onClick={() => navigate("/dashboard")}
+              aria-label="Back to dashboard"
+            >
+              ← Dashboard
+            </button>
             <span className="crumb-sep">/</span>
             <span className="crumb-current">{header.name}</span>
           </div>
@@ -130,7 +178,11 @@ export default function Classroom() {
             <div className="classroom-title-group">
               <h1 className="classroom-title">
                 {header.name}
-                {detailsLoading && <span style={{ marginLeft: 8, fontSize: 14, color: "#94a3b8" }}>…loading</span>}
+                {detailsLoading && (
+                  <span style={{ marginLeft: 8, fontSize: 14, color: "#94a3b8" }}>
+                    …loading
+                  </span>
+                )}
               </h1>
               <div className="classroom-meta">
                 {header.teacher && <span className="meta-chip">Instructor: {header.teacher}</span>}
@@ -151,16 +203,22 @@ export default function Classroom() {
                   </div>
                 )}
 
-                <span className="meta-chip chip-id">ID: {classId}</span>
+                <span className="meta-chip chip-id">ID: {classId || "—"}</span>
               </div>
 
-              {detailsError && <div style={{ marginTop: 8, color: "#fecaca", fontSize: 13 }}>{detailsError}</div>}
+              {detailsError && (
+                <div style={{ marginTop: 8, color: "#fecaca", fontSize: 13 }}>{detailsError}</div>
+              )}
             </div>
 
             <div className="classroom-actions" style={{ display: "flex", gap: 10 }}>
-              <button className="action-btn" onClick={openMembersDrawer}>View members</button>
+              <button className="action-btn" onClick={openMembersDrawer}>
+                View members
+              </button>
               {isInstructor && (
-                <button className="action-btn" onClick={() => setShowComposer(true)}>New announcement</button>
+                <button className="action-btn" onClick={() => setShowComposer(true)}>
+                  New announcement
+                </button>
               )}
             </div>
           </div>
@@ -170,7 +228,8 @@ export default function Classroom() {
       {/* Main split layout */}
       <main className="classroom-main">
         <section className="column column-left">
-          <ClassExperimentsPanel />
+          {/* FIX: pass classId and a token down to the experiments panel */}
+          <ClassExperimentsPanel classId={classId} token={tokens?.IdToken ?? undefined} />
         </section>
 
         <aside className="column column-right">
