@@ -165,7 +165,7 @@ const ClassExperimentsPanel: React.FC<Props> = ({ classId, token }) => {
   const handleStart = async () => {
     let idToken: string;
     try {
-      idToken = token?.trim() ? requireIdToken(token) : requireIdToken();
+      idToken = token?.trim() ? requireIdToken() : requireIdToken();
     } catch (e: any) {
       setNotice({ kind: "error", title: "Not signed in", message: e?.message || "Please sign in again." });
       return;
@@ -218,7 +218,7 @@ const ClassExperimentsPanel: React.FC<Props> = ({ classId, token }) => {
   async function fetchPage(cursor: string | undefined, { append }: { append: boolean }) {
     let idToken: string;
     try {
-      idToken = token?.trim() ? requireIdToken(token) : requireIdToken();
+      idToken = token?.trim() ? requireIdToken() : requireIdToken();
     } catch (e: any) {
       setNotice({ kind: "error", title: "Not signed in", message: e?.message || "Please sign in again." });
       return;
@@ -274,7 +274,7 @@ const ClassExperimentsPanel: React.FC<Props> = ({ classId, token }) => {
   async function onToggleHide(exp: ExperimentCard) {
     let idToken: string;
     try {
-      idToken = token?.trim() ? requireIdToken(token) : requireIdToken();
+      idToken = token?.trim() ? requireIdToken() : requireIdToken();
     } catch (e: any) {
       setNotice({ kind: "error", title: "Not signed in", message: e?.message || "Please sign in again." });
       return;
@@ -318,7 +318,7 @@ const ClassExperimentsPanel: React.FC<Props> = ({ classId, token }) => {
   async function onGetInfo(exp: ExperimentCard) {
     let idToken: string;
     try {
-      idToken = token?.trim() ? requireIdToken(token) : requireIdToken();
+      idToken = token?.trim() ? requireIdToken() : requireIdToken();
     } catch (e: any) {
       setNotice({ kind: "error", title: "Not signed in", message: e?.message || "Please sign in again." });
       return;
@@ -383,7 +383,7 @@ const ClassExperimentsPanel: React.FC<Props> = ({ classId, token }) => {
   async function onDelete(expId: string) {
     let idToken: string;
     try {
-      idToken = token?.trim() ? requireIdToken(token) : requireIdToken();
+      idToken = token?.trim() ? requireIdToken() : requireIdToken();
     } catch (e: any) {
       setNotice({ kind: "error", title: "Not signed in", message: e?.message || "Please sign in again." });
       return;
