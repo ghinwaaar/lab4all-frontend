@@ -251,13 +251,7 @@ export default function TitrationPanel({
   // 1) Resolve a guaranteed-valid ID token (prop → context → storage)
   let idToken: string;
   try {
-    if (token?.trim()) {
-      idToken = requireIdToken(token);
-    } else if (tokens?.IdToken || tokens?.idToken) {
-      idToken = requireIdToken((tokens.IdToken || tokens.idToken)!);
-    } else {
-      idToken = requireIdToken(); // falls back to storage discovery
-    }
+      idToken = requireIdToken();
   } catch (e: any) {
     setFinishMsg(e?.message || "Could not resolve a valid ID token. Please sign in again.");
     return;
