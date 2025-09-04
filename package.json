@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "preview": "vite preview"
   },
+  "engines": { "node": ">=22" },
   "dependencies": {
     "@babylonjs/core": "^8.24.0",
     "@babylonjs/gui": "^8.24.0",
